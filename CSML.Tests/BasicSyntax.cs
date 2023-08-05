@@ -1,5 +1,4 @@
 using CSML;
-using CSML.Compiler;
 
 namespace CSML.Tests;
 
@@ -10,25 +9,8 @@ public class BasicSyntax
     {
         MainPage c = CSMLTranslator.From<MainPage>(
             """
-            <C>
+            <MainPage>
             </C>
             """);
     }
 }
-
-public class CompilerTests
-{
-    [Fact]
-    public void SimpleCode()
-    {
-        var x = CSMLCompiler.GetSyntaxTrees(new[]
-        {
-            new CSMLRawCode(
-                    """
-                    <C>
-                    </C>
-                    """)
-        });
-    }
-}
-

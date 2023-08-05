@@ -22,10 +22,10 @@ public class CSMLGenerator : IIncrementalGenerator
                 // Analizing C# Code
                 var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
                 var typesToCreate = CSMLCsharpCodeAnalizer.GetTypesToCreate(translatorInvocation);
-                //var csmlCodes = CSMLCsharpCodeAnalizer.GetCSMLCode(translatorInvocation);
+                var csmlCodes = CSMLCsharpCodeAnalizer.GetCSMLCode(translatorInvocation);
 
                 // Analizing CSML Code
-                //var csmlSyntaxTrees = CSMLCompiler.GetSyntaxTrees(csmlCodes);
+                var csmlSyntaxTrees = CSMLCompiler.GetSyntaxTrees(csmlCodes);
 
                 // Generate Code
                 var classesAsTexts = CSMLClassCreator.CreateClasses(typesToCreate);
@@ -33,15 +33,15 @@ public class CSMLGenerator : IIncrementalGenerator
                 var setupMethods = CSMLClassCreator.CreateSetupMethods(typesToCreate);
                 var classesAsText = string.Join("\n\n", classesAsTexts);
 
-                var debug = ""; //string.Join("\n\n", csmlSyntaxTrees
-                //    .SyntaxTrees
-                //    .First()
-                //    .GetRoot()
-                //    .DescendingNodes()
-                //    .OfType<TagOpeningSyntax>()
-                //    .Select(x => x.Type));
+            var debug = string.Join("\n\n", csmlSyntaxTrees
+                    .SyntaxTrees
+                    .First()
+                    .GetRoot()
+                    .DescendingNodes()
+                    .OfType<TagOpeningSyntax>()
+                    .Select(x => x.Type));
 
-                var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
+        var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
                 context.AddSource("CSMLTranslator.generated.cs", finalCode);
             });
     }

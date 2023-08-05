@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using CSML.Compiler.Syntax;
 
@@ -15,38 +16,44 @@ public class CSMLCompiler
 
         foreach (var csmlCode in csmlCodes)
         {
-            var code = csmlCode.Value;
+            //var code = csmlCode.Value;
 
-            var codeParts = GetCodeParts(code);
+            //var codeParts = GetCodeParts(code);
 
-            foreach (var part in codeParts)
-            {
-                var match = _openTagSyntax.Match(part);
+            //foreach (var part in codeParts)
+            //{
+            //    //var match = _openTagSyntax.Match(part);
 
-                if (match.Success)
-                {
-                    var openTagText = match.Value;
 
-                    var tokensUnchecked = GetUncheckedTokens(openTagText);
+            //    //if (match.Success)
+            //    //{
+            //    //    var openTagText = match.Value;
 
-                    var (Verified, CheckedTokens) = VerifyTokensFor_TagOpeningSyntax(tokensUnchecked);
+            //    //    var tokensUnchecked = GetUncheckedTokens(openTagText);
 
-                    if (Verified == false) {
-                        //throw new InvalidOperationException("CSML seems to be wrong at an opening tag");
-                        continue;
-                    }
-                    var tokens = CheckedTokens;
+            //    //    var (Verified, CheckedTokens) = VerifyTokensFor_TagOpeningSyntax(tokensUnchecked);
 
-                    syntaxNodes.Add(new TagOpeningSyntax(tokens));
-                }
-            }
-            //throw new Exception($"|||{code}|||");
+            //    //    if (Verified == false) {
+            //    //        //throw new InvalidOperationException("CSML seems to be wrong at an opening tag");
+            //    //        continue;
+            //    //    }
+            //    //    var tokens = CheckedTokens;
+
+            //    //    syntaxNodes.Add(new TagOpeningSyntax(tokens));
+            //    //}
+            //}
         }
 
         return new CSMLCompilation(new List<CSMLSyntaxTree>()
         {
             new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes))
         });
+
+
+
+
+
+
 
         static CSMLSyntaxToken[] GetUncheckedTokens(string text)
         {
@@ -130,6 +137,6 @@ public class CSMLCompiler
         var lastPart = code.Substring(lastClosingTag, code.Length - lastClosingTag);
         codeParts.Add(lastPart);
 
-        return codeParts;
+        return codeParts.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
     }
 }
