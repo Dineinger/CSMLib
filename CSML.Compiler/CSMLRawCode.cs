@@ -1,3 +1,3 @@
-﻿namespace CSML.Generator;
+﻿namespace CSML.Compiler;
 
 public record struct CSMLRawCode(string Value);
