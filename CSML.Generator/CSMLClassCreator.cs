@@ -68,9 +68,13 @@ internal static class CSMLClassCreator
         return result;
     }
 
-    public static string CreateFinalCode(string fromCases, string setupMethods, string classesAsText)
+    public static string CreateFinalCode(string fromCases, string setupMethods, string classesAsText, string debug)
     {
         return $$"""
+                    /*
+                    {{debug}}
+                    */
+
                     /// generated code
                     namespace CSML;
 

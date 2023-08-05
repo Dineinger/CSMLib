@@ -9,7 +9,7 @@ public class BasicSyntax
     {
         MainPage c = CSMLTranslator.From<MainPage>(
             """
-            <C : object>
+            <C>
             </C>
             """);
     }

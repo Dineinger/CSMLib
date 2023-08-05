@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 
@@ -69,5 +70,34 @@ internal static class CSMLCsharpCodeAnalizer
                     .Any(id => id.Identifier.Text == CSMLTranslatorClass)
                 )
             ).ToImmutableArray();
+    }
+
+    public static CSMLRawCode[] GetCSMLCode(ImmutableArray<InvocationExpressionSyntax> translatorInvocation)
+    {
+        CSMLRawCode[] result = new CSMLRawCode[translatorInvocation.Length];
+
+        for (int i = 0; i < result.Length; i++)
+        {
+            var item = translatorInvocation[i];
+
+            string[] code = item.DescendantNodes()
+                .OfType<LiteralExpressionSyntax>()
+                .SelectMany(les => les
+                    .DescendantTokens()
+                    .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
+                    .Select(token => (string?)token.Value)
+                    .Where(x => x is not null).Select(x => x!)
+                )
+                .ToArray();
+
+            if (code.Length != 1)
+            {
+                throw new InvalidOperationException("There was more than one multi line raw string literal token found. There is no string iterpolation supported yet.");
+            }
+
+            result[i] = new CSMLRawCode(code[0]);
+        }
+
+        return result;
     }
 }
