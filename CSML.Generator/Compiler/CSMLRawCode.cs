@@ -1,3 +1,5 @@
-﻿namespace CSML.Compiler;
+﻿using Microsoft.CodeAnalysis.Text;
 
-public record struct CSMLRawCode(string Value);
+namespace CSML.Compiler;
+
+public record struct CSMLRawCode(string Value, TextSpan TextSpan);

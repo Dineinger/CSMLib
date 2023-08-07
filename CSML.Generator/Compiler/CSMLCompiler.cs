@@ -8,6 +8,7 @@ using CSML.Compiler.Syntax;
 using CSML.Generator;
 using CSML.Generator.Compiler.SyntaxErrors;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 
 namespace CSML.Compiler;
 
@@ -24,37 +25,33 @@ public class CSMLCompiler
     {
         var syntaxTreesUnverified = GetSyntaxTreesUnverified(csmlCodes);
 
-        if (VerifySyntaxTrees(syntaxTreesUnverified, out var syntaxError) == false) {
-            _context.ReportDiagnostic(
-                Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CSML0",
-                        "Syntax Error",
-                        $"""
-                        There was an error verifying the syntax: {syntaxError?.GetType()} with message: {syntaxError?.Message}"
-                        """,
-                        "CSML.SyntaxError",
-                        DiagnosticSeverity.Error,
-                        true),
-                    Location.None)
-                );
-        }
+        VerifySyntaxTrees(syntaxTreesUnverified);
+
         var syntaxTreesVerified = syntaxTreesUnverified;
 
-        return new CSMLCompilation(syntaxTreesVerified);
+        return new CSMLCompilation(syntaxTreesVerified.Select(x => x.CSMLSyntaxTree).ToImmutableArray());
     }
 
-    private static bool VerifySyntaxTrees(ImmutableArray<CSMLSyntaxTree> syntaxTreesUnverified, out SyntaxError? syntaxError)
+    private void VerifySyntaxTrees(ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTreesUnverified)
     {
         foreach (var syntaxTree in syntaxTreesUnverified) {
-            if (VerifySyntaxTree(syntaxTree, out var syntaxErrorInner) == false) {
-                syntaxError = syntaxErrorInner;
-                return false;
+            if (VerifySyntaxTree(syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
+                _context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "CSML0",
+                            "Syntax Error",
+                            $"""
+                            There was an error verifying the syntax: {syntaxError?.GetType()} with message: {syntaxError?.Message}"
+                            """,
+                            "CSML.SyntaxError",
+                            DiagnosticSeverity.Error,
+                            true),
+                        Location.Create(syntaxTree.Info.SyntaxTree, syntaxTree.Info.CSMLCode.TextSpan))
+                    );
+
             }
         }
-
-        syntaxError = null;
-        return true;
     }
 
     private static bool VerifySyntaxTree(CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
@@ -180,11 +177,11 @@ public class CSMLCompiler
         }
     }
 
-    private static ImmutableArray<CSMLSyntaxTree> GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes)
+    private static ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes)
     {
-        List<CSMLSyntaxTree> trees = new();
+        List<(CSMLRegistrationInfo, CSMLSyntaxTree)> trees = new();
         foreach (var csmlSourceInfo in csmlCodes) {
-            trees.Add(GetSyntaxTreeUnverified(csmlSourceInfo));
+            trees.Add((csmlSourceInfo, GetSyntaxTreeUnverified(csmlSourceInfo)));
         }
 
         return trees.ToImmutableArray();

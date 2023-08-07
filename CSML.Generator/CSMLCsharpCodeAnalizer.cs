@@ -42,7 +42,7 @@ internal static class CSMLCsharpCodeAnalizer
         return null;
     }
 
-    public static ImmutableArray<InvocationExpressionSyntax> GetTranslatorInvocations(Compilation compilation)
+    public static ImmutableArray<(SyntaxTree SyntaxTree, InvocationExpressionSyntax InvacationExpression)> GetTranslatorInvocations(Compilation compilation)
     {
         return compilation.SyntaxTrees
             .SelectMany(st => st
@@ -54,15 +54,17 @@ internal static class CSMLCsharpCodeAnalizer
                     .OfType<IdentifierNameSyntax>()
                     .Any(id => id.Identifier.Text == CSML_TRANSLATOR_CLASS)
                 )
-            ).ToImmutableArray();
+                .Select(x => (st, x))
+            )
+            .ToImmutableArray();
     }
 
-    public static CSMLRegistrationInfo[] GetInfoFromCSMLRegistration(ImmutableArray<InvocationExpressionSyntax> translatorInvocation)
+    public static CSMLRegistrationInfo[] GetInfoFromCSMLRegistration(ImmutableArray<(SyntaxTree SyntaxTree, InvocationExpressionSyntax InvocationExpression)> translatorInvocation)
     {
         return translatorInvocation
             .Select(ti =>
             {
-                var types = ti
+                var types = ti.InvocationExpression
                     .DescendantNodes()
                     .OfType<MemberAccessExpressionSyntax>()
                     .Select(maex => GetGenericParameterSyntaxToken(maex))
@@ -73,22 +75,26 @@ internal static class CSMLCsharpCodeAnalizer
                 }
                 var type = types.First();
 
-                var codes = ti
+                var codes = ti.InvocationExpression
                     .DescendantNodes()
                     .OfType<LiteralExpressionSyntax>()
-                    .SelectMany(les => les
-                        .DescendantTokens()
-                        .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
-                        .Select(token => (string?)token.Value)
-                        .Where(x => x is not null).Select(x => x!)
-                    );
+                    .SelectMany(les =>
+                    {
+                        var textSpan = les.FullSpan;
+                        return les
+                            .DescendantTokens()
+                            .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
+                            .Select(token => (string?)token.Value)
+                            .Where(x => x is not null).Select(x => (x!, textSpan));
+                    });
                 if (codes.Count() != 1) {
                     throw new Exception("""There was more than one multi line raw string literal given.""");
                 }
 
-                var code = new CSMLRawCode(codes.First());
+                var firstCode = codes.First();
+                var code = new CSMLRawCode(firstCode.Item1, firstCode.textSpan);
 
-                return new CSMLRegistrationInfo(type, code);
+                return new CSMLRegistrationInfo(ti.SyntaxTree, type, code);
             })
             .ToArray();
     }
