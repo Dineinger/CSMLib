@@ -5,16 +5,17 @@ namespace CSML.Generator;
 
 internal static class CSMLClassCreator
 {
-    public static string CreateSetupMethods(IEnumerable<SyntaxToken> typesToCreate)
+    public static string CreateSetupMethods(CSMLRegistrationInfo[] registrationInfo)
     {
         StringBuilder sb = new();
 
-        foreach (var type in typesToCreate)
+        foreach (var info in registrationInfo)
         {
+            var typeToCreate = info.TypeToCreate.Text;
             sb.Append("    private static void Setup_");
-            sb.Append(type.Text);
+            sb.Append(typeToCreate);
             sb.Append("(");
-            sb.Append(type.Text);
+            sb.Append(typeToCreate);
             sb.AppendLine(" result)");
             sb.AppendLine("    {");
             sb.AppendLine("""        throw new NotImplementedException("Method 'From' is not implemented by the Generator yet.");""");
@@ -24,38 +25,40 @@ internal static class CSMLClassCreator
         return sb.ToString();
     }
 
-    public static string CreateFromCases(IEnumerable<SyntaxToken> typesToCreate)
+    public static string CreateFromCases(CSMLRegistrationInfo[] registrationInfo)
     {
         StringBuilder sb = new();
 
-        foreach (SyntaxToken t in typesToCreate)
+        foreach (var info in registrationInfo)
         {
+            var typeToCreate = info.TypeToCreate.Text;
             sb.Append("            case ");
-            sb.Append(t.Text);
+            sb.Append(typeToCreate);
             sb.Append(" x: Setup_");
-            sb.Append(t.Text);
+            sb.Append(typeToCreate);
             sb.AppendLine("(x); break;");
         }
 
         return sb.ToString();
     }
 
-    public static string[] CreateClasses(IList<SyntaxToken> typesToCreate)
+    public static string[] CreateClasses(CSMLRegistrationInfo[] registrationInfo)
     {
-        var result = new string[typesToCreate.Count];
-        for (var a = 0; a < typesToCreate.Count; a++)
+        var result = new string[registrationInfo.Length];
+        for (var a = 0; a < registrationInfo.Length; a++)
         {
-            var type = typesToCreate[a];
+            var info = registrationInfo[a];
+            var typeToCreate = info.TypeToCreate.Text;
             StringBuilder sb = new();
             sb.AppendLine("/// generated because a method called CSMLTranslator.From was used");
             sb.Append("public sealed class ");
-            sb.Append(type.Text);
+            sb.Append(typeToCreate);
             sb.Append(" : object, ICSMLClass<");
-            sb.Append(type.Text);
+            sb.Append(typeToCreate);
             sb.AppendLine(">");
             sb.AppendLine("{");
             sb.Append("    public static ");
-            sb.Append(type.Text);
+            sb.Append(typeToCreate);
             sb.AppendLine(" New()");
             sb.AppendLine("    {");
             sb.AppendLine("        return new();");

@@ -21,16 +21,15 @@ public class CSMLGenerator : IIncrementalGenerator
             {
                 // Analizing C# Code
                 var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
-                var typesToCreate = CSMLCsharpCodeAnalizer.GetTypesToCreate(translatorInvocation);
-                var csmlCodes = CSMLCsharpCodeAnalizer.GetCSMLCode(translatorInvocation);
+                var csmlInvocationInfo = CSMLCsharpCodeAnalizer.GetInfoFromCSMLRegistration(translatorInvocation);
 
                 // Analizing CSML Code
-                var csmlSyntaxTrees = CSMLCompiler.GetSyntaxTrees(csmlCodes);
+                var csmlSyntaxTrees = CSMLCompiler.GetSyntaxTrees(csmlInvocationInfo);
 
                 // Generate Code
-                var classesAsTexts = CSMLClassCreator.CreateClasses(typesToCreate);
-                var fromCases = CSMLClassCreator.CreateFromCases(typesToCreate);
-                var setupMethods = CSMLClassCreator.CreateSetupMethods(typesToCreate);
+                var classesAsTexts = CSMLClassCreator.CreateClasses(csmlInvocationInfo);
+                var fromCases = CSMLClassCreator.CreateFromCases(csmlInvocationInfo);
+                var setupMethods = CSMLClassCreator.CreateSetupMethods(csmlInvocationInfo);
                 var classesAsText = string.Join("\n\n", classesAsTexts);
 
             var debug = string.Join("\n\n", csmlSyntaxTrees

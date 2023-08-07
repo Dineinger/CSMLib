@@ -12,5 +12,9 @@ public class BasicSyntax
             <MainPage>
             </C>
             """);
+
+        CSMLTranslator.From<X>("""
+
+            """);
     }
 }

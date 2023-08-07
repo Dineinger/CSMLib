@@ -4,9 +4,12 @@ public enum SyntaxType
 {
     LessThanToken,
     GreaterThanToken,
-    Literal,
+    Identifier,
     Dummy,
-    TypeToken
+    TypeToken,
+    SlashToken,
+    EndOfLineTrivia,
+    WhitespaceTrivia,
+    EndOfFileTrivia
 }
-
 

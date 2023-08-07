@@ -1,121 +1,147 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using CSML.Compiler.Syntax;
+using CSML.Generator;
 
 namespace CSML.Compiler;
 
 public class CSMLCompiler
 {
-    private static readonly Regex _openTagSyntax = new(@"<[A-z]+>");
-
-    public static CSMLCompilation GetSyntaxTrees(CSMLRawCode[] csmlCodes)
+    public static CSMLCompilation GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
     {
         List<CSMLSyntaxNode> syntaxNodes = new();
 
-        foreach (var csmlCode in csmlCodes)
+        foreach (var csmlSourceInfo in csmlCodes)
         {
-            //var code = csmlCode.Value;
+            var requiredCsharpType = csmlSourceInfo.TypeToCreate;
+            var code = csmlSourceInfo.CSMLCode.Value;
 
-            //var codeParts = GetCodeParts(code);
+            var uncheckedTokens = GetUncheckedTokens(code);
+            //var debug = string.Join("|", uncheckedTokens.Select(x => (x.SyntaxType.ToString(), x.Value?.ToString() ?? "null")));
+            //throw new Exception(debug);
+            var tokens = new TokenQueue(uncheckedTokens);
 
-            //foreach (var part in codeParts)
-            //{
-            //    //var match = _openTagSyntax.Match(part);
+            while (true) {
+                if (tokens.IsAtEnd) {
+                    break;
+                }
 
+                if (tokens.IsNextOfKind(SyntaxType.LessThanToken)) {
+                    var tagSyntaxToken = tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken);
+                    //throw new Exception($"1: {tagSyntaxToken[0].SyntaxType}, 2: {tagSyntaxToken[1].SyntaxType}, 3: {tagSyntaxToken[2].SyntaxType}");
 
-            //    //if (match.Success)
-            //    //{
-            //    //    var openTagText = match.Value;
+                    var verified = VerifyTokensFor_TagOpeningSyntax(tagSyntaxToken);
+                    if (verified == false) {
+                        //throw new InvalidOperationException("CSML seems to be wrong at an opening tag");
+                        continue;
+                    }
 
-            //    //    var tokensUnchecked = GetUncheckedTokens(openTagText);
+                    var verifiedTokens = tagSyntaxToken.ToArray();
 
-            //    //    var (Verified, CheckedTokens) = VerifyTokensFor_TagOpeningSyntax(tokensUnchecked);
+                    if (syntaxNodes.Any(x => x is TagOpeningSyntax)) {
+                        syntaxNodes.Add(new TagOpeningSyntax(verifiedTokens));
+                        continue;
+                    }
 
-            //    //    if (Verified == false) {
-            //    //        //throw new InvalidOperationException("CSML seems to be wrong at an opening tag");
-            //    //        continue;
-            //    //    }
-            //    //    var tokens = CheckedTokens;
+                    var typeToken = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
+                    syntaxNodes.Add(new CSMLComponentOpeningSyntax(verifiedTokens, (string)typeToken.Value!, "object"));
+                    continue;
+                }
 
-            //    //    syntaxNodes.Add(new TagOpeningSyntax(tokens));
-            //    //}
-            //}
+                var isTrivia = tokens.IsNextAnyOfKinds(SyntaxType.EndOfLineTrivia, SyntaxType.WhitespaceTrivia, SyntaxType.EndOfFileTrivia);
+                if (isTrivia) {
+                    if (tokens.MoveNext() == false) {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                throw new NotImplementedException($"""Not Implemented from token "{tokens.Next.SyntaxType}".""");
+            }
         }
 
         return new CSMLCompilation(new List<CSMLSyntaxTree>()
         {
             new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes))
         });
+    }
 
+    private static CSMLSyntaxToken[] GetUncheckedTokens(string text)
+    {
+        List<CSMLSyntaxToken> tokens = new();
 
-
-
-
-
-
-        static CSMLSyntaxToken[] GetUncheckedTokens(string text)
-        {
-            List<CSMLSyntaxToken> tokens = new();
-
-            string buffer = "";
-            bool addedToBuffer = false;
-            for (int a = 0; a < text.Length; a++)
-            {
-                addedToBuffer = false;
-
-                switch (text[a])
-                {
-                    case '<': tokens.Add(CSMLSyntaxToken.LessThan); break;
-                    case '>': tokens.Add(CSMLSyntaxToken.GreaterThan); break;
-                    case (> 'A' and < 'Z') or (> 'a' and < 'z'):
-                        addedToBuffer = true;
-                        buffer += text[a]; // TODO: remove allocations
-                        break;
-                    default: throw new NotImplementedException();
-                }
-
-                if (addedToBuffer is false)
-                {
-                    tokens.Add(CSMLSyntaxToken.Literal(buffer));
-                    buffer = "";
-                }
+        string buffer = "";
+        for (int a = 0; a < text.Length; a++) {
+            var addedToBuffer = GetToken(text[a], ref buffer, out var tokenToAdd);
+            if (addedToBuffer) {
+                continue;
             }
 
-            if (!string.IsNullOrEmpty(buffer))
-            {
-                tokens.Add(CSMLSyntaxToken.Literal(buffer));
+            if (addedToBuffer is false && !String.IsNullOrWhiteSpace(buffer)) {
+                tokens.Add(CSMLSyntaxToken.Identifier(buffer));
                 buffer = "";
             }
 
-            return tokens.ToArray();
+            tokens.Add(tokenToAdd);
+            continue;
+        }
+
+        if (!string.IsNullOrEmpty(buffer)) {
+            tokens.Add(CSMLSyntaxToken.Identifier(buffer));
+            buffer = "";
+        }
+
+        tokens.Add(CSMLSyntaxToken.EndOfFileTrivia);
+
+        // debug
+        var result = new CSMLSyntaxToken[tokens.Count];
+
+        for (var i = 0; i < tokens.Count; i++) {
+            var token = tokens[i];
+            token.debugIndex = i;
+            result[i] = token;
+        }
+
+        return result.ToArray();
+    }
+
+    private static bool GetToken(char c, ref string buffer, out CSMLSyntaxToken tokenToAdd)
+    {
+        switch (c) {
+            case (>= 'A' and <= 'Z') or (>= 'a' and <= 'z'):
+                buffer += c; // TODO: remove allocations
+                tokenToAdd = default;
+                return true;
+            case '<': tokenToAdd = CSMLSyntaxToken.LessThan; return false;
+            case '>': tokenToAdd = CSMLSyntaxToken.GreaterThan; return false;
+            case '/': tokenToAdd = CSMLSyntaxToken.SlashToken; return false;
+            case '\n' or '\r': tokenToAdd = CSMLSyntaxToken.EndOfLineTrivia; return false; // TODO: "\r\n" implementieren
+            case ' ': tokenToAdd = CSMLSyntaxToken.WhitespaceTrivia; return false;
+            default: throw new NotImplementedException($"""Symbol not implemented: "{c}" """);
         }
     }
 
-    private static (bool Verified, CSMLSyntaxToken[] CheckedTokens) VerifyTokensFor_TagOpeningSyntax(CSMLSyntaxToken[] tokensUnchecked)
+    private static bool VerifyTokensFor_TagOpeningSyntax(ReadOnlySpan<CSMLSyntaxToken> tokensUnchecked)
     {
 
         if (tokensUnchecked[0].SyntaxType != SyntaxType.LessThanToken) {
-            return (false, new CSMLSyntaxToken[0]);
+            return false;
         }
 
-        if (tokensUnchecked[1].SyntaxType != SyntaxType.Literal) {
-            return (false, new CSMLSyntaxToken[0]);
+        if (tokensUnchecked[1].SyntaxType != SyntaxType.Identifier) {
+            return false;
         }
 
         if (tokensUnchecked[2].SyntaxType != SyntaxType.GreaterThanToken) {
-            return (false, new CSMLSyntaxToken[0]);
+            return false;
         }
 
-        var result = new CSMLSyntaxToken[]
-        {
-            tokensUnchecked[0],
-            CSMLSyntaxToken.TypeToken((string)tokensUnchecked[1].Value!),
-            tokensUnchecked[2],
-        };
-
-        return (true, result);
+        return true;
     }
 
     private static IReadOnlyList<string> GetCodeParts(string code)

@@ -11,22 +11,6 @@ internal static class CSMLCsharpCodeAnalizer
     private const string CSMLTranslatorClass = "CSMLTranslator";
     private const string CSMLTranslator_From = "From";
 
-    public static SyntaxToken[] GetTypesToCreate(IEnumerable<InvocationExpressionSyntax> translatorInvocation)
-    {
-        return translatorInvocation
-            .SelectMany(ti => ti
-                .DescendantNodes()
-                .OfType<MemberAccessExpressionSyntax>()
-                .Select(maex =>
-                {
-                    return GetGenericParameterSyntaxToken(maex);
-                })
-                .Where(x => x.HasValue)
-                .Select(x => x!.Value))
-            .ToArray();
-    }
-
-
     public static SyntaxToken? GetGenericParameterSyntaxToken(MemberAccessExpressionSyntax maex)
     {
         var children = maex.DescendantNodes();
@@ -73,32 +57,39 @@ internal static class CSMLCsharpCodeAnalizer
             ).ToImmutableArray();
     }
 
-    public static CSMLRawCode[] GetCSMLCode(ImmutableArray<InvocationExpressionSyntax> translatorInvocation)
+    public static CSMLRegistrationInfo[] GetInfoFromCSMLRegistration(ImmutableArray<InvocationExpressionSyntax> translatorInvocation)
     {
-        CSMLRawCode[] result = new CSMLRawCode[translatorInvocation.Length];
-
-        for (int i = 0; i < result.Length; i++)
-        {
-            var item = translatorInvocation[i];
-
-            string[] code = item.DescendantNodes()
-                .OfType<LiteralExpressionSyntax>()
-                .SelectMany(les => les
-                    .DescendantTokens()
-                    .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
-                    .Select(token => (string?)token.Value)
-                    .Where(x => x is not null).Select(x => x!)
-                )
-                .ToArray();
-
-            if (code.Length != 1)
+        return translatorInvocation
+            .Select(ti =>
             {
-                throw new InvalidOperationException("There was more than one multi line raw string literal token found. There is no string iterpolation supported yet.");
-            }
+                var types = ti
+                    .DescendantNodes()
+                    .OfType<MemberAccessExpressionSyntax>()
+                    .Select(maex => GetGenericParameterSyntaxToken(maex))
+                    .Where(x => x.HasValue)
+                    .Select(x => x!.Value);
+                if (types.Count() != 1) {
+                    throw new Exception("""There was more than one generic type given.""");
+                }
+                var type = types.First();
 
-            result[i] = new CSMLRawCode(code[0]);
-        }
+                var codes = ti
+                    .DescendantNodes()
+                    .OfType<LiteralExpressionSyntax>()
+                    .SelectMany(les => les
+                        .DescendantTokens()
+                        .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
+                        .Select(token => (string?)token.Value)
+                        .Where(x => x is not null).Select(x => x!)
+                    );
+                if (codes.Count() != 1) {
+                    throw new Exception("""There was more than one multi line raw string literal given.""");
+                }
 
-        return result;
+                var code = new CSMLRawCode(codes.First());
+
+                return new CSMLRegistrationInfo(type, code);
+            })
+            .ToArray();
     }
 }

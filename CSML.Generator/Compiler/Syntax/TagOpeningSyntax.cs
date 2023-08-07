@@ -17,6 +17,25 @@ public class TagOpeningSyntax : CSMLSyntaxNode
 
     public override IReadOnlyList<CSMLSyntaxNode> DescendingNodes()
     {
-        return Array.Empty<CSMLSyntaxNode>();
+        throw new NotImplementedException();
+    }
+}
+
+public sealed class CSMLComponentOpeningSyntax : CSMLSyntaxNode
+{
+    private readonly CSMLSyntaxToken[] _tokens;
+    private readonly string _type;
+    private readonly string _baseType;
+
+    public CSMLComponentOpeningSyntax(CSMLSyntaxToken[] tokens, string type, string baseType)
+    {
+        _tokens = tokens;
+        _type = type;
+        _baseType = baseType;
+    }
+
+    public override IReadOnlyList<CSMLSyntaxNode> DescendingNodes()
+    {
+        throw new NotImplementedException();
     }
 }
