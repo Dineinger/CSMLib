@@ -108,6 +108,13 @@ public class CSMLCompiler
             return false;
         }
 
+        if (openTags.Count != 0) {
+            syntaxError = new TagNotClosedSyntaxError($"""
+                Last open tag type: {openTags.Peek()}
+                """);
+            return false;
+        }
+
         syntaxError = null;
         return true;
     }

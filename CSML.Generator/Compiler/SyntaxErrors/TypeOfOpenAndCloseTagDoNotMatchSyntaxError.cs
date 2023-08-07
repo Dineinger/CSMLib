@@ -28,3 +28,8 @@ internal class TagAtBadPositionSyntaxError : SyntaxError
 {
     public TagAtBadPositionSyntaxError(string message) : base(message) { }
 }
+
+internal class TagNotClosedSyntaxError : SyntaxError
+{
+    public TagNotClosedSyntaxError(string message) : base(message) { }
+}
