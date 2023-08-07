@@ -4,6 +4,8 @@ namespace CSML.Compiler.Syntax;
 
 public abstract class CSMLSyntaxNode
 {
+    public abstract IEnumerable<CSMLSyntaxNode> DirectChildren { get; }
+
     public abstract IEnumerable<CSMLSyntaxNode> DescendingNodes();
 
     protected IEnumerable<CSMLSyntaxNode> DefaultDescendingNodesImpl(IEnumerable<CSMLSyntaxNode> directChildTokens)

@@ -8,13 +8,13 @@ namespace CSML.Generator;
 
 internal static class CSMLCsharpCodeAnalizer
 {
-    private const string CSMLTranslatorClass = "CSMLTranslator";
-    private const string CSMLTranslator_From = "From";
+    private const string CSML_TRANSLATOR_CLASS = "CSMLTranslator";
+    private const string CSMLTRANSLATOR_FROM = "From";
 
     public static SyntaxToken? GetGenericParameterSyntaxToken(MemberAccessExpressionSyntax maex)
     {
         var children = maex.DescendantNodes();
-        var hasTranslatorClass = children.Any(x => x is IdentifierNameSyntax id && (id.Identifier.Text == CSMLTranslatorClass));
+        var hasTranslatorClass = children.Any(x => x is IdentifierNameSyntax id && (id.Identifier.Text == CSML_TRANSLATOR_CLASS));
 
         if (hasTranslatorClass)
         {
@@ -25,7 +25,7 @@ internal static class CSMLCsharpCodeAnalizer
                     continue;
                 }
 
-                if (genericName.Identifier.Text != CSMLTranslator_From)
+                if (genericName.Identifier.Text != CSMLTRANSLATOR_FROM)
                 {
                     continue;
                 }
@@ -52,7 +52,7 @@ internal static class CSMLCsharpCodeAnalizer
                 .Where(invocationExp => invocationExp
                     .DescendantNodes()
                     .OfType<IdentifierNameSyntax>()
-                    .Any(id => id.Identifier.Text == CSMLTranslatorClass)
+                    .Any(id => id.Identifier.Text == CSML_TRANSLATOR_CLASS)
                 )
             ).ToImmutableArray();
     }

@@ -10,11 +10,9 @@ public class BasicSyntax
         MainPage c = CSMLTranslator.From<MainPage>(
             """
             <MainPage>
-            </C>
-            """);
-
-        CSMLTranslator.From<X>("""
-
+                <C>
+                </C>
+            </MainPage>
             """);
     }
 }

@@ -24,7 +24,8 @@ public class CSMLGenerator : IIncrementalGenerator
                 var csmlInvocationInfo = CSMLCsharpCodeAnalizer.GetInfoFromCSMLRegistration(translatorInvocation);
 
                 // Analizing CSML Code
-                var csmlSyntaxTrees = CSMLCompiler.GetSyntaxTrees(csmlInvocationInfo);
+                var compiler = new CSMLCompiler(context);
+                var csmlSyntaxTrees = compiler.GetSyntaxTrees(csmlInvocationInfo);
 
                 // Generate Code
                 var classesAsTexts = CSMLClassCreator.CreateClasses(csmlInvocationInfo);

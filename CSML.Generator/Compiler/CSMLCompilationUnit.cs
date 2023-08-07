@@ -7,6 +7,8 @@ public class CSMLCompilationUnit : CSMLSyntaxNode
 {
     private List<CSMLSyntaxNode> _directChildren { get; }
 
+    public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
+
     public CSMLCompilationUnit(List<CSMLSyntaxNode> directChildren)
     {
         _directChildren = directChildren;

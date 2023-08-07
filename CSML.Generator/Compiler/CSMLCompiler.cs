@@ -6,23 +6,113 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using CSML.Compiler.Syntax;
 using CSML.Generator;
+using CSML.Generator.Compiler.SyntaxErrors;
+using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;
 
 public class CSMLCompiler
 {
-    public static CSMLCompilation GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
+    SourceProductionContext _context;
+
+    public CSMLCompiler(SourceProductionContext context)
+    {
+        _context = context;
+    }
+
+    public CSMLCompilation GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
     {
         var syntaxTreesUnverified = GetSyntaxTreesUnverified(csmlCodes);
 
-        var syntaxTreesVerified = VerifySyntaxTrees(syntaxTreesUnverified);
+        if (VerifySyntaxTrees(syntaxTreesUnverified, out var syntaxError) == false) {
+            _context.ReportDiagnostic(
+                Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "CSML0",
+                        "Syntax Error",
+                        $"""
+                        There was an error verifying the syntax: {syntaxError?.GetType()} with message: {syntaxError?.Message}"
+                        """,
+                        "CSML.SyntaxError",
+                        DiagnosticSeverity.Error,
+                        true),
+                    Location.None)
+                );
+        }
+        var syntaxTreesVerified = syntaxTreesUnverified;
 
         return new CSMLCompilation(syntaxTreesVerified);
     }
 
-    private static IReadOnlyList<CSMLSyntaxTree> VerifySyntaxTrees(ImmutableArray<CSMLSyntaxTree> syntaxTreesUnverified)
+    private static bool VerifySyntaxTrees(ImmutableArray<CSMLSyntaxTree> syntaxTreesUnverified, out SyntaxError? syntaxError)
     {
-        return syntaxTreesUnverified;
+        foreach (var syntaxTree in syntaxTreesUnverified) {
+            if (VerifySyntaxTree(syntaxTree, out var syntaxErrorInner) == false) {
+                syntaxError = syntaxErrorInner;
+                return false;
+            }
+        }
+
+        syntaxError = null;
+        return true;
+    }
+
+    private static bool VerifySyntaxTree(CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
+    {
+        Stack<CSMLSyntaxNode> openTags = new();
+
+        foreach (var node in syntaxTree.GetRoot().DirectChildren) {
+            if (node is CSMLComponentOpeningSyntax componentOpening) {
+                openTags.Push(componentOpening);
+                continue;
+            }
+
+            if (node is TagOpeningSyntax tagOpening) {
+                openTags.Push(tagOpening);
+                continue;
+            }
+
+            if (node is TagClosingSyntax tagClosing) {
+
+                if (openTags.Peek() is TagOpeningSyntax tagOpeningWhenTagClosing) {
+                    if (tagClosing.Type == tagOpeningWhenTagClosing.Type) {
+                        openTags.Pop();
+                        continue;
+                    }
+
+                    syntaxError = new TypeOfOpenAndCloseTagDoNotMatchSyntaxError($"""
+                        Opening tag type: {tagOpeningWhenTagClosing.Type} | Closing type: {tagClosing.Type}
+                        """);
+                    return false;
+                }
+
+                if (openTags.Peek() is CSMLComponentOpeningSyntax componentOpeningWhenTagClosing) {
+                    if (tagClosing.Type == componentOpeningWhenTagClosing.Type) {
+                        openTags.Pop();
+                        continue;
+                    }
+
+                    syntaxError = new TypeOfOpenAndCloseTagDoNotMatchSyntaxError($"""
+                        Opening Component type: {componentOpeningWhenTagClosing.Type} | Closing type: {tagClosing.Type}
+                        """);
+                    return false;
+                }
+
+
+                syntaxError = new ClosingTagUnableToCloseAnythingSyntaxError($"""
+                    Last type on stack: {openTags.Peek()}
+                    """);
+                return false;
+            }
+
+            syntaxError = new TagAtBadPositionSyntaxError($"""
+                Tag type not known: {node}
+                """);
+            return false;
+        }
+
+        syntaxError = null;
+        return true;
     }
 
     private static CSMLSyntaxTree GetSyntaxTreeUnverified(CSMLRegistrationInfo info)
