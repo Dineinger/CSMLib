@@ -3,39 +3,34 @@ using System.Collections.Generic;
 
 namespace CSML.Compiler.Syntax;
 
-public class TagOpeningSyntax : CSMLSyntaxNode
+public sealed class TagOpeningSyntax : CSMLSyntaxNode
 {
     private readonly CSMLSyntaxToken[] _tokens;
+    private readonly List<CSMLSyntaxNode> _directChildTokens = new();
 
     public string Type { get; }
 
-    public TagOpeningSyntax(CSMLSyntaxToken[] tokens)
+    public TagOpeningSyntax(CSMLSyntaxToken[] tokens, string type)
     {
-        Type = (string)tokens[1].Value!;
+        Type = type;
         _tokens = tokens;
     }
 
-    public override IReadOnlyList<CSMLSyntaxNode> DescendingNodes()
-    {
-        throw new NotImplementedException();
-    }
+    public override IEnumerable<CSMLSyntaxNode> DescendingNodes() => DefaultDescendingNodesImpl(_directChildTokens);
 }
 
-public sealed class CSMLComponentOpeningSyntax : CSMLSyntaxNode
+public sealed class TagClosingSyntax : CSMLSyntaxNode
 {
     private readonly CSMLSyntaxToken[] _tokens;
+    private readonly List<CSMLSyntaxNode> _directChildren;
     private readonly string _type;
-    private readonly string _baseType;
 
-    public CSMLComponentOpeningSyntax(CSMLSyntaxToken[] tokens, string type, string baseType)
+    public TagClosingSyntax(CSMLSyntaxToken[] verifiedTokens, List<CSMLSyntaxNode> directChildren, string type)
     {
-        _tokens = tokens;
+        _tokens = verifiedTokens;
+        _directChildren = directChildren;
         _type = type;
-        _baseType = baseType;
     }
 
-    public override IReadOnlyList<CSMLSyntaxNode> DescendingNodes()
-    {
-        throw new NotImplementedException();
-    }
+    public override IEnumerable<CSMLSyntaxNode> DescendingNodes() => DefaultDescendingNodesImpl(_directChildren);
 }

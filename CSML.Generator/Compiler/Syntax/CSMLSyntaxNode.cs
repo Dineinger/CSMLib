@@ -4,7 +4,17 @@ namespace CSML.Compiler.Syntax;
 
 public abstract class CSMLSyntaxNode
 {
-    public abstract IReadOnlyList<CSMLSyntaxNode> DescendingNodes();
+    public abstract IEnumerable<CSMLSyntaxNode> DescendingNodes();
+
+    protected IEnumerable<CSMLSyntaxNode> DefaultDescendingNodesImpl(IEnumerable<CSMLSyntaxNode> directChildTokens)
+    {
+        yield return this;
+        foreach (var child in directChildTokens) {
+            foreach (var grandchilds in child.DescendingNodes()) {
+                yield return grandchilds;
+            }
+        }
+    }
 }
 
 

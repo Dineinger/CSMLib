@@ -13,62 +13,91 @@ public class CSMLCompiler
 {
     public static CSMLCompilation GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
     {
+        var syntaxTreesUnverified = GetSyntaxTreesUnverified(csmlCodes);
+
+        var syntaxTreesVerified = VerifySyntaxTrees(syntaxTreesUnverified);
+
+        return new CSMLCompilation(syntaxTreesVerified);
+    }
+
+    private static IReadOnlyList<CSMLSyntaxTree> VerifySyntaxTrees(ImmutableArray<CSMLSyntaxTree> syntaxTreesUnverified)
+    {
+        return syntaxTreesUnverified;
+    }
+
+    private static CSMLSyntaxTree GetSyntaxTreeUnverified(CSMLRegistrationInfo info)
+    {
         List<CSMLSyntaxNode> syntaxNodes = new();
+        var code = info.CSMLCode.Value;
 
-        foreach (var csmlSourceInfo in csmlCodes)
-        {
-            var requiredCsharpType = csmlSourceInfo.TypeToCreate;
-            var code = csmlSourceInfo.CSMLCode.Value;
+        var uncheckedTokens = GetUncheckedTokens(code);
+        var tokens = new TokenQueue(uncheckedTokens);
 
-            var uncheckedTokens = GetUncheckedTokens(code);
-            //var debug = string.Join("|", uncheckedTokens.Select(x => (x.SyntaxType.ToString(), x.Value?.ToString() ?? "null")));
-            //throw new Exception(debug);
-            var tokens = new TokenQueue(uncheckedTokens);
+        CreateAndAddSyntaxNodesFromTokens(syntaxNodes, tokens);
 
-            while (true) {
-                if (tokens.IsAtEnd) {
+        return new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes));
+    }
+
+    private static void CreateAndAddSyntaxNodesFromTagTokens(List<CSMLSyntaxNode> syntaxNodes, ReadOnlySpan<CSMLSyntaxToken> tagSyntaxToken)
+    {
+        var isOpeningSyntax = VerifyTokensFor_TagOpeningSyntax(tagSyntaxToken);
+        if (isOpeningSyntax) {
+            var verifiedTokens = tagSyntaxToken.ToArray();
+
+            if (syntaxNodes.Any(x => x is CSMLComponentOpeningSyntax)) {
+                syntaxNodes.Add(new TagOpeningSyntax(verifiedTokens, (string)verifiedTokens[1].Value!));
+                return;
+            }
+
+            var typeToken = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
+            syntaxNodes.Add(new CSMLComponentOpeningSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeToken.Value!, "object"));
+            return;
+        }
+
+        var isClosingSyntax = VerifyTokensFor_TagClosingSyntax(tagSyntaxToken);
+        if (isClosingSyntax) {
+            var verifiedTokens = tagSyntaxToken.ToArray();
+
+            var typeTokens = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
+            syntaxNodes.Add(new TagClosingSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeTokens.Value!));
+        }
+
+        return;
+    }
+
+    private static void CreateAndAddSyntaxNodesFromTokens(List<CSMLSyntaxNode> syntaxNodes, TokenQueue tokens)
+    {
+        while (true) {
+            if (tokens.IsAtEnd) {
+                break;
+            }
+
+            if (tokens.IsNextOfKind(SyntaxType.LessThanToken)) {
+                CreateAndAddSyntaxNodesFromTagTokens(syntaxNodes, tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken));
+                continue;
+            }
+
+            var isTrivia = tokens.IsNextAnyOfKinds(SyntaxType.EndOfLineTrivia, SyntaxType.WhitespaceTrivia, SyntaxType.EndOfFileTrivia);
+            if (isTrivia) {
+                if (tokens.MoveNext() == false) {
                     break;
                 }
 
-                if (tokens.IsNextOfKind(SyntaxType.LessThanToken)) {
-                    var tagSyntaxToken = tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken);
-                    //throw new Exception($"1: {tagSyntaxToken[0].SyntaxType}, 2: {tagSyntaxToken[1].SyntaxType}, 3: {tagSyntaxToken[2].SyntaxType}");
-
-                    var verified = VerifyTokensFor_TagOpeningSyntax(tagSyntaxToken);
-                    if (verified == false) {
-                        //throw new InvalidOperationException("CSML seems to be wrong at an opening tag");
-                        continue;
-                    }
-
-                    var verifiedTokens = tagSyntaxToken.ToArray();
-
-                    if (syntaxNodes.Any(x => x is TagOpeningSyntax)) {
-                        syntaxNodes.Add(new TagOpeningSyntax(verifiedTokens));
-                        continue;
-                    }
-
-                    var typeToken = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
-                    syntaxNodes.Add(new CSMLComponentOpeningSyntax(verifiedTokens, (string)typeToken.Value!, "object"));
-                    continue;
-                }
-
-                var isTrivia = tokens.IsNextAnyOfKinds(SyntaxType.EndOfLineTrivia, SyntaxType.WhitespaceTrivia, SyntaxType.EndOfFileTrivia);
-                if (isTrivia) {
-                    if (tokens.MoveNext() == false) {
-                        break;
-                    }
-
-                    continue;
-                }
-
-                throw new NotImplementedException($"""Not Implemented from token "{tokens.Next.SyntaxType}".""");
+                continue;
             }
+
+            throw new NotImplementedException($"""Not Implemented from token "{tokens.Next.SyntaxType}".""");
+        }
+    }
+
+    private static ImmutableArray<CSMLSyntaxTree> GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes)
+    {
+        List<CSMLSyntaxTree> trees = new();
+        foreach (var csmlSourceInfo in csmlCodes) {
+            trees.Add(GetSyntaxTreeUnverified(csmlSourceInfo));
         }
 
-        return new CSMLCompilation(new List<CSMLSyntaxTree>()
-        {
-            new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes))
-        });
+        return trees.ToImmutableArray();
     }
 
     private static CSMLSyntaxToken[] GetUncheckedTokens(string text)
@@ -138,6 +167,28 @@ public class CSMLCompiler
         }
 
         if (tokensUnchecked[2].SyntaxType != SyntaxType.GreaterThanToken) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool VerifyTokensFor_TagClosingSyntax(ReadOnlySpan<CSMLSyntaxToken> tokensUnchecked)
+    {
+
+        if (tokensUnchecked[0].SyntaxType != SyntaxType.LessThanToken) {
+            return false;
+        }
+
+        if (tokensUnchecked[1].SyntaxType != SyntaxType.SlashToken) {
+            return false;
+        }
+
+        if (tokensUnchecked[2].SyntaxType != SyntaxType.Identifier) {
+            return false;
+        }
+
+        if (tokensUnchecked[3].SyntaxType != SyntaxType.GreaterThanToken) {
             return false;
         }
 

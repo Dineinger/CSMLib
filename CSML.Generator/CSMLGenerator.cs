@@ -32,15 +32,15 @@ public class CSMLGenerator : IIncrementalGenerator
                 var setupMethods = CSMLClassCreator.CreateSetupMethods(csmlInvocationInfo);
                 var classesAsText = string.Join("\n\n", classesAsTexts);
 
-            var debug = string.Join("\n\n", csmlSyntaxTrees
-                    .SyntaxTrees
-                    .First()
-                    .GetRoot()
-                    .DescendingNodes()
-                    .OfType<TagOpeningSyntax>()
-                    .Select(x => x.Type));
+                var debug = string.Join("\n\n", csmlSyntaxTrees
+                        .SyntaxTrees
+                        .First()
+                        .GetRoot()
+                        .DescendingNodes()
+                        .OfType<CSMLComponentOpeningSyntax>()
+                        .Select(x => x.Type));
 
-        var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
+                var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
                 context.AddSource("CSMLTranslator.generated.cs", finalCode);
             });
     }
