@@ -25,15 +25,14 @@ public class CSMLGenerator : IIncrementalGenerator
 
                 // Analizing CSML Code
                 var compiler = new CSMLCompiler(context);
-                var csmlSyntaxTrees = compiler.GetSyntaxTrees(csmlInvocationInfo);
+                var csmlSyntaxTrees = compiler.GetSyntaxTrees(csmlInvocationInfo)
+                                      ?? throw new NullReferenceException("Compilation was null in CSML Generator");
 
                 // Generate Code
-                var classesAsTexts = CSMLClassCreator.CreateClasses(csmlInvocationInfo);
-                var fromCases = CSMLClassCreator.CreateFromCases(csmlInvocationInfo);
-                var setupMethods = CSMLClassCreator.CreateSetupMethods(csmlInvocationInfo);
-                var classesAsText = string.Join("\n\n", classesAsTexts);
+                var classesAsTexts = CSMLClassCreator.CreateClasses(csmlSyntaxTrees);
+                var classesAsText = String.Join("\n\n", classesAsTexts);
 
-                var debug = string.Join("\n\n", csmlSyntaxTrees?
+                var debug = String.Join("\n\n", csmlSyntaxTrees?
                         .SyntaxTrees
                         .First()
                         .GetRoot()
@@ -41,7 +40,7 @@ public class CSMLGenerator : IIncrementalGenerator
                         .OfType<CSMLComponentOpeningSyntax>()
                         .Select(x => x.Type) ?? Enumerable.Empty<string>());
 
-                var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
+                var finalCode = CSMLClassCreator.CreateFinalCode(classesAsText, debug);
                 context.AddSource("CSMLTranslator.generated.cs", finalCode);
             });
     }

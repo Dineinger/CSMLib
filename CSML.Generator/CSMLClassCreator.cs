@@ -1,10 +1,13 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using CSML.Compiler;
+using CSML.Compiler.Syntax;
+using Microsoft.CodeAnalysis;
 using System.Text;
 
 namespace CSML.Generator;
 
 internal static class CSMLClassCreator
 {
+    [Obsolete("use New() for setup")]
     public static string CreateSetupMethods(CSMLRegistrationInfo[] registrationInfo)
     {
         StringBuilder sb = new();
@@ -42,12 +45,15 @@ internal static class CSMLClassCreator
         return sb.ToString();
     }
 
-    public static string[] CreateClasses(CSMLRegistrationInfo[] registrationInfo)
+    public static string[] CreateClasses(CSMLCompilation compilation)
     {
-        var result = new string[registrationInfo.Length];
-        for (var a = 0; a < registrationInfo.Length; a++)
+        var syntaxTrees = compilation.SyntaxTrees;
+
+        var result = new string[syntaxTrees.Count];
+        for (var a = 0; a < syntaxTrees.Count; a++)
         {
-            var info = registrationInfo[a];
+            var syntaxTree = syntaxTrees[a];
+            var info = syntaxTree.RegistrationInfo;
             var typeToCreate = info.TypeToCreate.Text;
             StringBuilder sb = new();
             _ = sb.AppendLine("/// generated because a method called CSMLTranslator.From was used")
@@ -60,8 +66,10 @@ internal static class CSMLClassCreator
                 .Append("    public static ")
                 .Append(typeToCreate)
                 .AppendLine(" New()")
-                .AppendLine("    {")
-                .AppendLine("        return new();")
+                .AppendLine("    {");
+            AppendSetupCode(sb, syntaxTree);
+
+              _ = sb.AppendLine("        return new();")
                 .AppendLine("    }")
                 .AppendLine("}");
 
@@ -71,7 +79,24 @@ internal static class CSMLClassCreator
         return result;
     }
 
-    public static string CreateFinalCode(string fromCases, string setupMethods, string classesAsText, string debug)
+    private static void AppendSetupCode(StringBuilder sb, CSMLSyntaxTree syntaxTree)
+    {
+        var root = syntaxTree.GetRoot();
+        _ = sb.Append("// syntax tree: ").AppendLine(String.Join("|", root.DescendingNodes()));
+        foreach (var node in root.DirectChildren) {
+            if (node is CSMLComponentOpeningSyntax componentSyntax) {
+                var children = componentSyntax.DirectChildren;
+                foreach (var n in children) {
+                    _ = sb.Append("// n: ").AppendLine(n.GetType().ToString());
+                    if (n is TagOpeningSyntax tag) {
+                        _ = sb.Append("// adding type: ").Append(tag.Type);
+                    }
+                }
+            }
+        }
+    }
+
+    public static string CreateFinalCode(string classesAsText, string debug)
     {
         return $$"""
                     /*
@@ -94,16 +119,8 @@ internal static class CSMLClassCreator
                         {
                             var result = T.New();
 
-                            switch (result)
-                            {
-                    {{fromCases}}
-                                default: throw new InvalidOperationException();
-                            }
-
                             return result;
                         }
-
-                    {{setupMethods}}
                     }
 
                     {{classesAsText}}

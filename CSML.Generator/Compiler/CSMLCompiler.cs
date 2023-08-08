@@ -138,7 +138,7 @@ public class CSMLCompiler
 
         var success = CreateAndAddSyntaxNodesFromTokens(syntaxNodes, tokens, out var innerSyntaxError);
 
-        syntaxTree = success ? new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes)) : null;
+        syntaxTree = success ? new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes), info) : null;
         syntaxError = innerSyntaxError;
         return success;
     }

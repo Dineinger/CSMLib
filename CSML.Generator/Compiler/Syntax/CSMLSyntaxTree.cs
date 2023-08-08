@@ -1,14 +1,19 @@
-﻿using System.Threading;
+﻿using CSML.Generator;
+using System.Threading;
 
 namespace CSML.Compiler.Syntax;
 
 public class CSMLSyntaxTree
 {
     private readonly CSMLSyntaxNode _root;
+    private readonly CSMLRegistrationInfo _registrationInfo;
 
-    public CSMLSyntaxTree(CSMLSyntaxNode root)
+    public CSMLRegistrationInfo RegistrationInfo => _registrationInfo;
+
+    public CSMLSyntaxTree(CSMLSyntaxNode root, CSMLRegistrationInfo registrationInfo)
     {
         _root = root;
+        _registrationInfo = registrationInfo;
     }
 
     protected CSMLSyntaxNode GetRootCore(CancellationToken cancellationToken)
