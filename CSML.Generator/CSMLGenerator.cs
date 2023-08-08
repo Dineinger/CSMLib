@@ -35,15 +35,7 @@ public class CSMLGenerator : IIncrementalGenerator
                 var classesAsTexts = CSMLClassCreator.CreateClasses(csmlSyntaxTrees);
                 var classesAsText = String.Join("\n\n", classesAsTexts);
 
-                var debug = String.Join("\n\n", csmlSyntaxTrees?
-                        .SyntaxTrees
-                        .First()
-                        .GetRoot()
-                        .DescendingNodes()
-                        .OfType<CSMLComponentOpeningSyntax>()
-                        .Select(x => x.Type) ?? Enumerable.Empty<string>());
-
-                var finalCode = CSMLClassCreator.CreateFinalCode(classesAsText, debug);
+                var finalCode = CSMLClassCreator.CreateFinalCode(classesAsText);
                 context.AddSource("CSMLTranslator.generated.cs", finalCode);
             });
     }
