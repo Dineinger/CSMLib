@@ -4,8 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using CSML.Compiler.Syntax;
 using CSML.Generator;
+using CSML.Generator.Compiler;
 using CSML.Generator.Compiler.SyntaxErrors;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -38,7 +40,7 @@ public class CSMLCompiler
     private void VerifySyntaxTrees(ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTreesUnverified)
     {
         foreach (var syntaxTree in syntaxTreesUnverified) {
-            if (VerifySyntaxTree(syntaxTree.Info, syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
+            if (VerifySyntaxTree(syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
                 _context.ReportDiagnostic(
                     Diagnostic.Create(
                         new DiagnosticDescriptor(
@@ -57,71 +59,94 @@ public class CSMLCompiler
         }
     }
 
-    private static bool VerifySyntaxTree(CSMLRegistrationInfo info, CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
+    private static bool VerifySyntaxTree(CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
     {
         Stack<CSMLSyntaxNode> openTags = new();
 
-        foreach (var node in syntaxTree.GetRoot().DirectChildren) {
-            if (node is CSMLComponentOpeningSyntax componentOpening) {
-                if (componentOpening.Type != info.TypeToCreate.ValueText) {
-                    syntaxError = new BadTypeSyntaxError($"""
-                        The component level tag has a type that is different from the generic parameter provided by the C# code
-                        """);
-                    return false;
-                }
+        var success = VerifySyntaxNodes(openTags, syntaxTree.RegistrationInfo, syntaxTree.GetRoot().DirectChildren, out var innerSyntaxError);
 
-                openTags.Push(componentOpening);
-                continue;
+        if (success is false) {
+            syntaxError = innerSyntaxError;
+            return false;
+        }
+
+        syntaxError = null;
+        return true;
+    }
+
+    private static bool VerifySyntaxNode(Stack<CSMLSyntaxNode> openTags, CSMLRegistrationInfo info, CSMLSyntaxNode node, out SyntaxError? syntaxError)
+    {
+        if (node is CSMLComponentOpeningSyntax componentOpeningSyntax) {
+            if (componentOpeningSyntax.Type != info.TypeToCreate.ValueText) {
+                syntaxError = new BadTypeSyntaxError($"""
+                    The component level tag has a type that is different from the generic parameter provided by the C# code
+                    """);
+                return false;
             }
 
-            if (node is TagOpeningSyntax tagOpening) {
-                openTags.Push(tagOpening);
-                continue;
-            }
+            openTags.Push(componentOpeningSyntax);
+            syntaxError = null;
+            return true;
+        }
 
-            if (node is TagClosingSyntax tagClosing) {
+        if (node is TagOpeningSyntax tagOpening) {
+            openTags.Push(tagOpening);
+            syntaxError = null;
+            return true;
+        }
 
-                if (openTags.Peek() is TagOpeningSyntax tagOpeningWhenTagClosing) {
-                    if (tagClosing.Type == tagOpeningWhenTagClosing.Type) {
-                        _ = openTags.Pop();
-                        continue;
-                    }
-
+        if (node is TagClosingSyntax tagClosing) {
+            if (openTags.Peek() is TagOpeningSyntax tagOpeningWhenTagClosing) {
+                if (tagClosing.Type != tagOpeningWhenTagClosing.Type) {
                     syntaxError = new TypeOfOpenAndCloseTagDoNotMatchSyntaxError($"""
                         Opening tag type: {tagOpeningWhenTagClosing.Type} | Closing type: {tagClosing.Type}
                         """);
                     return false;
                 }
 
-                if (openTags.Peek() is CSMLComponentOpeningSyntax componentOpeningWhenTagClosing) {
-                    if (tagClosing.Type == componentOpeningWhenTagClosing.Type) {
-                        _ = openTags.Pop();
-                        continue;
-                    }
+                _ = openTags.Pop();
+                syntaxError = null;
+                return true;
+            }
 
+            if (openTags.Peek() is CSMLComponentOpeningSyntax componentOpeningWhenTagClosing) {
+                if (tagClosing.Type != componentOpeningWhenTagClosing.Type) {
                     syntaxError = new TypeOfOpenAndCloseTagDoNotMatchSyntaxError($"""
                         Opening Component type: {componentOpeningWhenTagClosing.Type} | Closing type: {tagClosing.Type}
                         """);
                     return false;
                 }
 
-                syntaxError = new ClosingTagUnableToCloseAnythingSyntaxError($"""
-                    Last type on stack: {openTags.Peek()}
-                    """);
-                return false;
+                _ = openTags.Pop();
+                syntaxError = null;
+                return true;
             }
-
-            syntaxError = new TagAtBadPositionSyntaxError($"""
-                Tag type not known: {node}
-                """);
+            syntaxError = new ClosingTagUnableToCloseAnythingSyntaxError($"""
+                        Last type on stack: {openTags.Peek()}
+                        """);
             return false;
         }
 
-        if (openTags.Count != 0) {
-            syntaxError = new TagNotClosedSyntaxError($"""
-                Last open tag type: {openTags.Peek()}
-                """);
-            return false;
+        syntaxError = new UnknownSyntaxSyntaxError($"""
+            While verifing syntax tree there was a syntax node which couldn't be verified: {node}
+            """);
+        return false;
+    }
+
+    private static bool VerifySyntaxNodes(Stack<CSMLSyntaxNode> openTags, CSMLRegistrationInfo info, IEnumerable<CSMLSyntaxNode> nodes, out SyntaxError? syntaxError)
+    {
+        foreach (var node in nodes) {
+            var success = VerifySyntaxNode(openTags, info, node, out var innerSyntaxError);
+            if (success is false) {
+                syntaxError = innerSyntaxError;
+                return false;
+            }
+
+            var childrenSuccess = VerifySyntaxNodes(openTags, info, node.DirectChildren, out var innerChildSyntaxError);
+            if (childrenSuccess is false) {
+                syntaxError = innerChildSyntaxError;
+                return false;
+            }
         }
 
         syntaxError = null;
@@ -130,43 +155,46 @@ public class CSMLCompiler
 
     private static bool GetSyntaxTreeUnverified(CSMLRegistrationInfo info, out CSMLSyntaxTree? syntaxTree, out SyntaxError? syntaxError)
     {
-        List<CSMLSyntaxNode> syntaxNodes = new();
         var code = info.CSMLCode.Value;
-
         var uncheckedTokens = GetUncheckedTokens(code);
         var tokens = new TokenQueue(uncheckedTokens);
 
-        var success = CreateAndAddSyntaxNodesFromTokens(syntaxNodes, tokens, out var innerSyntaxError);
+        var builder = new SyntaxTreeBuilder(new SyntaxNodeBuilder(SyntaxNodeKind.CompilationUnit, new CSMLSyntaxToken[0]));
 
-        syntaxTree = success ? new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes), info) : null;
-        syntaxError = innerSyntaxError;
-        return success;
+        var success = BuildSyntaxTreeUnverified(tokens, builder, out var innerSyntaxError);
+
+        if (success is false) {
+            syntaxTree = null;
+            syntaxError = innerSyntaxError;
+            return false;
+        }
+
+        syntaxError = null;
+        syntaxTree = new CSMLSyntaxTree(builder.Build(), info);
+        return true;
     }
 
-    private static bool CreateAndAddSyntaxNodesFromTagTokens(List<CSMLSyntaxNode> syntaxNodes, ReadOnlySpan<CSMLSyntaxToken> tagSyntaxToken, out SyntaxError? syntaxError)
+    private static bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, ReadOnlySpan<CSMLSyntaxToken> tokens, out SyntaxError? syntaxError)
     {
-        var isOpeningSyntax = VerifyTokensFor_TagOpeningSyntax(tagSyntaxToken);
+        var isOpeningSyntax = VerifyTokensFor_TagOpeningSyntax(tokens);
         if (isOpeningSyntax) {
-            var verifiedTokens = tagSyntaxToken.ToArray();
+            var verifiedTokens = tokens.ToArray();
 
-            if (syntaxNodes.Any(x => x is CSMLComponentOpeningSyntax)) {
-                syntaxNodes.Add(new TagOpeningSyntax(verifiedTokens, (string)verifiedTokens[1].Value!));
+            if (builder.Contains(SyntaxNodeKind.CSMLComponentOpeningSyntax)) {
+                builder.InAndAdd(new SyntaxNodeBuilder(SyntaxNodeKind.TagOpeningSyntax, verifiedTokens));
                 syntaxError = null;
                 return true;
             }
 
-            var typeToken = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
-            syntaxNodes.Add(new CSMLComponentOpeningSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeToken.Value!, "object"));
+            builder.InAndAdd(new SyntaxNodeBuilder(SyntaxNodeKind.CSMLComponentOpeningSyntax, verifiedTokens));
             syntaxError = null;
             return true;
         }
 
-        var isClosingSyntax = VerifyTokensFor_TagClosingSyntax(tagSyntaxToken);
+        var isClosingSyntax = VerifyTokensFor_TagClosingSyntax(tokens);
         if (isClosingSyntax) {
-            var verifiedTokens = tagSyntaxToken.ToArray();
-
-            var typeTokens = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
-            syntaxNodes.Add(new TagClosingSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeTokens.Value!));
+            var verifiedTokens = tokens.ToArray();
+            builder.AddAndOut(new SyntaxNodeBuilder(SyntaxNodeKind.TagClosingSyntax, verifiedTokens));
             syntaxError = null;
             return true;
         }
@@ -177,7 +205,7 @@ public class CSMLCompiler
         return false;
     }
 
-    private static bool CreateAndAddSyntaxNodesFromTokens(List<CSMLSyntaxNode> syntaxNodes, TokenQueue tokens, out SyntaxError? syntaxError)
+    private static bool BuildSyntaxTreeUnverified(TokenQueue tokens, SyntaxTreeBuilder builder, out SyntaxError? syntaxError)
     {
         while (true) {
             if (tokens.IsAtEnd) {
@@ -185,7 +213,7 @@ public class CSMLCompiler
             }
 
             if (tokens.IsNextOfKind(SyntaxType.LessThanToken)) {
-                var success = CreateAndAddSyntaxNodesFromTagTokens(syntaxNodes, tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken), out var innerSyntaxError);
+                var success = BuildSyntaxNodesFromTagTokens(builder, tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken), out var innerSyntaxError);
                 if (success == false) {
                     syntaxError = innerSyntaxError;
                     return false;

@@ -63,13 +63,17 @@ internal static class CSMLClassCreator
                 .Append(typeToCreate)
                 .AppendLine(">")
                 .AppendLine("{")
+                .AppendLine("    public readonly List<object> Children = new();")
+                .AppendLine()
                 .Append("    public static ")
                 .Append(typeToCreate)
                 .AppendLine(" New()")
-                .AppendLine("    {");
+                .AppendLine("    {")
+                .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
+
             AppendSetupCode(sb, syntaxTree);
 
-              _ = sb.AppendLine("        return new();")
+              _ = sb.AppendLine("        return self;")
                 .AppendLine("    }")
                 .AppendLine("}");
 
@@ -82,18 +86,46 @@ internal static class CSMLClassCreator
     private static void AppendSetupCode(StringBuilder sb, CSMLSyntaxTree syntaxTree)
     {
         var root = syntaxTree.GetRoot();
-        _ = sb.Append("// syntax tree: ").AppendLine(String.Join("|", root.DescendingNodes()));
+        var varCount = 100;
         foreach (var node in root.DirectChildren) {
             if (node is CSMLComponentOpeningSyntax componentSyntax) {
                 var children = componentSyntax.DirectChildren;
                 foreach (var n in children) {
-                    _ = sb.Append("// n: ").AppendLine(n.GetType().ToString());
                     if (n is TagOpeningSyntax tag) {
-                        _ = sb.Append("// adding type: ").Append(tag.Type);
+                        AppendSetupCodeFromNode(sb, tag, "self", ref varCount);
+                        continue;
                     }
+
+                    if (n is TagClosingSyntax) {
+                        break;
+                    }
+
+                    throw new NotImplementedException(n.ToString());
                 }
             }
         }
+    }
+
+    private static void AppendSetupCodeFromNode(StringBuilder sb, TagOpeningSyntax syntaxNode, string lastCreatedNode, ref int varCount)
+    {
+        var type = syntaxNode.Type;
+        var typeVar = "@_" + type + varCount;
+        _ = sb.Append("        var ").Append(typeVar).Append(" = ").Append(type).AppendLine(".New();");
+        foreach (var child in syntaxNode.DirectChildren) {
+            if (child is TagOpeningSyntax tag) {
+                varCount++;
+                AppendSetupCodeFromNode(sb, tag, typeVar, ref varCount);
+                continue;
+            }
+
+            if (child is TagClosingSyntax) {
+                break;
+            }
+
+            throw new NotImplementedException($"node couldn't be turned into C# code: {child}");
+        }
+
+        _ = sb.Append("        ").Append(lastCreatedNode).Append(".Children.Add(").Append(typeVar).AppendLine(");");
     }
 
     public static string CreateFinalCode(string classesAsText, string debug)

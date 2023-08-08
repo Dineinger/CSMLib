@@ -9,8 +9,20 @@ public class BasicSyntax
             """
             <MainPage>
                 <C>
+                    <C>
+                        <C>
+                        </C>
+                    </C>
+                    <C>
+                    </C>
                 </C>
             </MainPage>
+            """);
+
+        _ = CSMLTranslator.From<C>(
+            """
+            <C>
+            </C>
             """);
 
         Assert.Equal(typeof(MainPage), c.GetType());
