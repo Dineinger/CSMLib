@@ -38,7 +38,7 @@ public class CSMLCompiler
     private void VerifySyntaxTrees(ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTreesUnverified)
     {
         foreach (var syntaxTree in syntaxTreesUnverified) {
-            if (VerifySyntaxTree(syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
+            if (VerifySyntaxTree(syntaxTree.Info, syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
                 _context.ReportDiagnostic(
                     Diagnostic.Create(
                         new DiagnosticDescriptor(
@@ -57,12 +57,19 @@ public class CSMLCompiler
         }
     }
 
-    private static bool VerifySyntaxTree(CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
+    private static bool VerifySyntaxTree(CSMLRegistrationInfo info, CSMLSyntaxTree syntaxTree, out SyntaxError? syntaxError)
     {
         Stack<CSMLSyntaxNode> openTags = new();
 
         foreach (var node in syntaxTree.GetRoot().DirectChildren) {
             if (node is CSMLComponentOpeningSyntax componentOpening) {
+                if (componentOpening.Type != info.TypeToCreate.ValueText) {
+                    syntaxError = new BadTypeSyntaxError($"""
+                        The component level tag has a type that is different from the generic parameter provided by the C# code
+                        """);
+                    return false;
+                }
+
                 openTags.Push(componentOpening);
                 continue;
             }

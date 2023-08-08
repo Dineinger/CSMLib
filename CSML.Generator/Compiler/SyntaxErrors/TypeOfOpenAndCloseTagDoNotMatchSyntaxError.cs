@@ -43,3 +43,8 @@ internal class UnknownSyntaxSyntaxError : SyntaxError
 {
     public UnknownSyntaxSyntaxError(string message) : base(message) { }
 }
+
+internal class BadTypeSyntaxError : SyntaxError
+{
+    public BadTypeSyntaxError(string message) : base(message) { }
+}
