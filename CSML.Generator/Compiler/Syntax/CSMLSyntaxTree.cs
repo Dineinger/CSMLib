@@ -21,5 +21,3 @@ public class CSMLSyntaxTree
         return GetRootCore(cancellationToken);
     }
 }
-
-

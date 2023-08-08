@@ -48,6 +48,7 @@ public class TokenQueue
             Index = Count;
             return tokens.Slice(index);
         }
+
         Index = indexOfSyntaxToken + 1;
         return tokens.Slice(index, indexOfSyntaxToken - index + 1);
     }

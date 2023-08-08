@@ -5,7 +5,7 @@ namespace CSML.Compiler;
 
 public class CSMLCompilationUnit : CSMLSyntaxNode
 {
-    private List<CSMLSyntaxNode> _directChildren { get; }
+    private readonly List<CSMLSyntaxNode> _directChildren;
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 
@@ -16,5 +16,3 @@ public class CSMLCompilationUnit : CSMLSyntaxNode
 
     public override IEnumerable<CSMLSyntaxNode> DescendingNodes() => DefaultDescendingNodesImpl(_directChildren);
 }
-
-

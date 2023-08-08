@@ -4,7 +4,7 @@ namespace CSML.Compiler.Syntax;
 
 public struct CSMLSyntaxToken
 {
-    public int debugIndex { get; set; }
+    public int DebugIndex { get; set; }
 
     public SyntaxType SyntaxType { get; }
 

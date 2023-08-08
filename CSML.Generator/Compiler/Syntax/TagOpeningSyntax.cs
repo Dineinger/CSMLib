@@ -11,6 +11,7 @@ public sealed class TagOpeningSyntax : CSMLSyntaxNode
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 
     public string Type { get; }
+    public IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
     public TagOpeningSyntax(CSMLSyntaxToken[] tokens, string type)
     {

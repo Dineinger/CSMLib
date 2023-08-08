@@ -12,14 +12,14 @@ internal static class CSMLClassCreator
         foreach (var info in registrationInfo)
         {
             var typeToCreate = info.TypeToCreate.Text;
-            sb.Append("    private static void Setup_");
-            sb.Append(typeToCreate);
-            sb.Append("(");
-            sb.Append(typeToCreate);
-            sb.AppendLine(" result)");
-            sb.AppendLine("    {");
-            sb.AppendLine("""        throw new NotImplementedException("Method 'From' is not implemented by the Generator yet.");""");
-            sb.AppendLine("    }");
+            _ = sb.Append("    private static void Setup_")
+                .Append(typeToCreate)
+                .Append("(")
+                .Append(typeToCreate)
+                .AppendLine(" result)")
+                .AppendLine("    {")
+                .AppendLine("""        throw new NotImplementedException("Method 'From' is not implemented by the Generator yet.");""")
+                .AppendLine("    }");
         }
 
         return sb.ToString();
@@ -32,11 +32,11 @@ internal static class CSMLClassCreator
         foreach (var info in registrationInfo)
         {
             var typeToCreate = info.TypeToCreate.Text;
-            sb.Append("            case ");
-            sb.Append(typeToCreate);
-            sb.Append(" x: Setup_");
-            sb.Append(typeToCreate);
-            sb.AppendLine("(x); break;");
+            _ = sb.Append("            case ")
+                .Append(typeToCreate)
+                .Append(" x: Setup_")
+                .Append(typeToCreate)
+                .AppendLine("(x); break;");
         }
 
         return sb.ToString();
@@ -50,20 +50,20 @@ internal static class CSMLClassCreator
             var info = registrationInfo[a];
             var typeToCreate = info.TypeToCreate.Text;
             StringBuilder sb = new();
-            sb.AppendLine("/// generated because a method called CSMLTranslator.From was used");
-            sb.Append("public sealed class ");
-            sb.Append(typeToCreate);
-            sb.Append(" : object, ICSMLClass<");
-            sb.Append(typeToCreate);
-            sb.AppendLine(">");
-            sb.AppendLine("{");
-            sb.Append("    public static ");
-            sb.Append(typeToCreate);
-            sb.AppendLine(" New()");
-            sb.AppendLine("    {");
-            sb.AppendLine("        return new();");
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
+            _ = sb.AppendLine("/// generated because a method called CSMLTranslator.From was used")
+                .Append("public sealed class ")
+                .Append(typeToCreate)
+                .Append(" : object, ICSMLClass<")
+                .Append(typeToCreate)
+                .AppendLine(">")
+                .AppendLine("{")
+                .Append("    public static ")
+                .Append(typeToCreate)
+                .AppendLine(" New()")
+                .AppendLine("    {")
+                .AppendLine("        return new();")
+                .AppendLine("    }")
+                .AppendLine("}");
 
             result[a] = sb.ToString();
         }

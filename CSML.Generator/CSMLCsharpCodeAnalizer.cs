@@ -73,6 +73,7 @@ internal static class CSMLCsharpCodeAnalizer
                 if (types.Count() != 1) {
                     throw new Exception("""There was more than one generic type given.""");
                 }
+
                 var type = types.First();
 
                 var codes = ti.InvocationExpression
@@ -85,14 +86,14 @@ internal static class CSMLCsharpCodeAnalizer
                             .DescendantTokens()
                             .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
                             .Select(token => ((string?)token.Value, token, token.Span))
-                            .Where(x => x.Item1 is not null).Select(x => (x.Item1!, x.Item2, x.Item3));
+                            .Where(x => x.Item1 is not null).Select(x => (x.Item1!, x.token, x.Span));
                     });
                 if (codes.Count() != 1) {
                     throw new Exception("""There was more than one multi line raw string literal given.""");
                 }
 
                 var firstCode = codes.First();
-                var code = new CSMLRawCode(firstCode.Item1, firstCode.Item2, firstCode.Item3);
+                var code = new CSMLRawCode(firstCode.Item1, firstCode.token, firstCode.Span);
 
                 return new CSMLRegistrationInfo(ti.SyntaxTree, type, code);
             })

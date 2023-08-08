@@ -76,7 +76,7 @@ public class CSMLCompiler
 
                 if (openTags.Peek() is TagOpeningSyntax tagOpeningWhenTagClosing) {
                     if (tagClosing.Type == tagOpeningWhenTagClosing.Type) {
-                        openTags.Pop();
+                        _ = openTags.Pop();
                         continue;
                     }
 
@@ -88,7 +88,7 @@ public class CSMLCompiler
 
                 if (openTags.Peek() is CSMLComponentOpeningSyntax componentOpeningWhenTagClosing) {
                     if (tagClosing.Type == componentOpeningWhenTagClosing.Type) {
-                        openTags.Pop();
+                        _ = openTags.Pop();
                         continue;
                     }
 
@@ -97,7 +97,6 @@ public class CSMLCompiler
                         """);
                     return false;
                 }
-
 
                 syntaxError = new ClosingTagUnableToCloseAnythingSyntaxError($"""
                     Last type on stack: {openTags.Peek()}
@@ -214,6 +213,7 @@ public class CSMLCompiler
                 AddBadTokenDiagnostic(csmlSourceInfo, innerSyntaxError);
                 return false;
             }
+
             trees.Add((csmlSourceInfo, innerSyntaxTree!));
         }
 
@@ -265,7 +265,7 @@ public class CSMLCompiler
             continue;
         }
 
-        if (!string.IsNullOrEmpty(buffer)) {
+        if (!String.IsNullOrEmpty(buffer)) {
             tokens.Add(CSMLSyntaxToken.Identifier(buffer));
             buffer = "";
         }
@@ -277,7 +277,7 @@ public class CSMLCompiler
 
         for (var i = 0; i < tokens.Count; i++) {
             var token = tokens[i];
-            token.debugIndex = i;
+            token.DebugIndex = i;
             result[i] = token;
         }
 
@@ -338,27 +338,5 @@ public class CSMLCompiler
         }
 
         return true;
-    }
-
-    private static IReadOnlyList<string> GetCodeParts(string code)
-    {
-        var codeParts = new List<string>();
-
-        var lastClosingTag = 0;
-        for (int a = 0; a < code.Length; a++)
-        {
-            var c = code[a];
-
-            if (c == '>')
-            {
-                var part = code.Substring(lastClosingTag, a - lastClosingTag + 1);
-                codeParts.Add(part);
-                lastClosingTag = a + 1;
-            }
-        }
-        var lastPart = code.Substring(lastClosingTag, code.Length - lastClosingTag);
-        codeParts.Add(lastPart);
-
-        return codeParts.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
     }
 }

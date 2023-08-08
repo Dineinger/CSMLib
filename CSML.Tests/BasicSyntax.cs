@@ -15,5 +15,7 @@ public class BasicSyntax
                 </C>
             </MainPage>
             """);
+
+        Assert.Equal(typeof(MainPage), c.GetType());
     }
 }

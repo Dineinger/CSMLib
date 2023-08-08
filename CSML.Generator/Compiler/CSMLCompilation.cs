@@ -12,5 +12,3 @@ public class CSMLCompilation
         SyntaxTrees = syntaxTrees;
     }
 }
-
-
