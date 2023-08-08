@@ -33,13 +33,13 @@ public class CSMLGenerator : IIncrementalGenerator
                 var setupMethods = CSMLClassCreator.CreateSetupMethods(csmlInvocationInfo);
                 var classesAsText = string.Join("\n\n", classesAsTexts);
 
-                var debug = string.Join("\n\n", csmlSyntaxTrees
+                var debug = string.Join("\n\n", csmlSyntaxTrees?
                         .SyntaxTrees
                         .First()
                         .GetRoot()
                         .DescendingNodes()
                         .OfType<CSMLComponentOpeningSyntax>()
-                        .Select(x => x.Type));
+                        .Select(x => x.Type) ?? Enumerable.Empty<string>());
 
                 var finalCode = CSMLClassCreator.CreateFinalCode(fromCases, setupMethods, classesAsText, debug);
                 context.AddSource("CSMLTranslator.generated.cs", finalCode);

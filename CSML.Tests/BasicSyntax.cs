@@ -1,4 +1,5 @@
 using CSML;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CSML.Tests;
 

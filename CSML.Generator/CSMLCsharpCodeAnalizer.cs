@@ -84,15 +84,15 @@ internal static class CSMLCsharpCodeAnalizer
                         return les
                             .DescendantTokens()
                             .Where(token => token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken))
-                            .Select(token => (string?)token.Value)
-                            .Where(x => x is not null).Select(x => (x!, textSpan));
+                            .Select(token => ((string?)token.Value, token, token.Span))
+                            .Where(x => x.Item1 is not null).Select(x => (x.Item1!, x.Item2, x.Item3));
                     });
                 if (codes.Count() != 1) {
                     throw new Exception("""There was more than one multi line raw string literal given.""");
                 }
 
                 var firstCode = codes.First();
-                var code = new CSMLRawCode(firstCode.Item1, firstCode.textSpan);
+                var code = new CSMLRawCode(firstCode.Item1, firstCode.Item2, firstCode.Item3);
 
                 return new CSMLRegistrationInfo(ti.SyntaxTree, type, code);
             })

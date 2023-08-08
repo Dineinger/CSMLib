@@ -33,3 +33,13 @@ internal class TagNotClosedSyntaxError : SyntaxError
 {
     public TagNotClosedSyntaxError(string message) : base(message) { }
 }
+
+internal class TagSyntaxError : SyntaxError
+{
+    public TagSyntaxError(string message) : base(message) { }
+}
+
+internal class UnknownSyntaxSyntaxError : SyntaxError
+{
+    public UnknownSyntaxSyntaxError(string message) : base(message) { }
+}

@@ -14,16 +14,19 @@ namespace CSML.Compiler;
 
 public class CSMLCompiler
 {
-    SourceProductionContext _context;
+    private readonly SourceProductionContext _context;
 
     public CSMLCompiler(SourceProductionContext context)
     {
         _context = context;
     }
 
-    public CSMLCompilation GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
+    public CSMLCompilation? GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
     {
-        var syntaxTreesUnverified = GetSyntaxTreesUnverified(csmlCodes);
+        var success = GetSyntaxTreesUnverified(csmlCodes, out var syntaxTreesUnverified);
+        if (success is false) {
+            return null;
+        }
 
         VerifySyntaxTrees(syntaxTreesUnverified);
 
@@ -119,7 +122,7 @@ public class CSMLCompiler
         return true;
     }
 
-    private static CSMLSyntaxTree GetSyntaxTreeUnverified(CSMLRegistrationInfo info)
+    private static bool GetSyntaxTreeUnverified(CSMLRegistrationInfo info, out CSMLSyntaxTree? syntaxTree, out SyntaxError? syntaxError)
     {
         List<CSMLSyntaxNode> syntaxNodes = new();
         var code = info.CSMLCode.Value;
@@ -127,12 +130,14 @@ public class CSMLCompiler
         var uncheckedTokens = GetUncheckedTokens(code);
         var tokens = new TokenQueue(uncheckedTokens);
 
-        CreateAndAddSyntaxNodesFromTokens(syntaxNodes, tokens);
+        var success = CreateAndAddSyntaxNodesFromTokens(syntaxNodes, tokens, out var innerSyntaxError);
 
-        return new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes));
+        syntaxTree = success ? new CSMLSyntaxTree(new CSMLCompilationUnit(syntaxNodes)) : null;
+        syntaxError = innerSyntaxError;
+        return success;
     }
 
-    private static void CreateAndAddSyntaxNodesFromTagTokens(List<CSMLSyntaxNode> syntaxNodes, ReadOnlySpan<CSMLSyntaxToken> tagSyntaxToken)
+    private static bool CreateAndAddSyntaxNodesFromTagTokens(List<CSMLSyntaxNode> syntaxNodes, ReadOnlySpan<CSMLSyntaxToken> tagSyntaxToken, out SyntaxError? syntaxError)
     {
         var isOpeningSyntax = VerifyTokensFor_TagOpeningSyntax(tagSyntaxToken);
         if (isOpeningSyntax) {
@@ -140,12 +145,14 @@ public class CSMLCompiler
 
             if (syntaxNodes.Any(x => x is CSMLComponentOpeningSyntax)) {
                 syntaxNodes.Add(new TagOpeningSyntax(verifiedTokens, (string)verifiedTokens[1].Value!));
-                return;
+                syntaxError = null;
+                return true;
             }
 
             var typeToken = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
             syntaxNodes.Add(new CSMLComponentOpeningSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeToken.Value!, "object"));
-            return;
+            syntaxError = null;
+            return true;
         }
 
         var isClosingSyntax = VerifyTokensFor_TagClosingSyntax(tagSyntaxToken);
@@ -154,12 +161,17 @@ public class CSMLCompiler
 
             var typeTokens = verifiedTokens.First(x => x.SyntaxType == SyntaxType.Identifier);
             syntaxNodes.Add(new TagClosingSyntax(verifiedTokens, new List<CSMLSyntaxNode>(), (string)typeTokens.Value!));
+            syntaxError = null;
+            return true;
         }
 
-        return;
+        syntaxError = new TagSyntaxError($"""
+            Tag does not fit any allowed syntax
+            """);
+        return false;
     }
 
-    private static void CreateAndAddSyntaxNodesFromTokens(List<CSMLSyntaxNode> syntaxNodes, TokenQueue tokens)
+    private static bool CreateAndAddSyntaxNodesFromTokens(List<CSMLSyntaxNode> syntaxNodes, TokenQueue tokens, out SyntaxError? syntaxError)
     {
         while (true) {
             if (tokens.IsAtEnd) {
@@ -167,7 +179,12 @@ public class CSMLCompiler
             }
 
             if (tokens.IsNextOfKind(SyntaxType.LessThanToken)) {
-                CreateAndAddSyntaxNodesFromTagTokens(syntaxNodes, tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken));
+                var success = CreateAndAddSyntaxNodesFromTagTokens(syntaxNodes, tokens.GetUntilOrEndAndMove(SyntaxType.GreaterThanToken), out var innerSyntaxError);
+                if (success == false) {
+                    syntaxError = innerSyntaxError;
+                    return false;
+                }
+
                 continue;
             }
 
@@ -180,18 +197,52 @@ public class CSMLCompiler
                 continue;
             }
 
-            throw new NotImplementedException($"""Not Implemented from token "{tokens.Next.SyntaxType}".""");
+            syntaxError = new UnknownSyntaxSyntaxError($"""Not Implemented or allowed from token "{tokens.Next.SyntaxType}".""");
+            return false;
         }
+
+        syntaxError = null;
+        return true;
     }
 
-    private static ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes)
+    private bool GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes, out ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTree)
     {
         List<(CSMLRegistrationInfo, CSMLSyntaxTree)> trees = new();
         foreach (var csmlSourceInfo in csmlCodes) {
-            trees.Add((csmlSourceInfo, GetSyntaxTreeUnverified(csmlSourceInfo)));
+            var success = GetSyntaxTreeUnverified(csmlSourceInfo, out var innerSyntaxTree, out var innerSyntaxError);
+            if (success is false) {
+                AddBadTokenDiagnostic(csmlSourceInfo, innerSyntaxError);
+                return false;
+            }
+            trees.Add((csmlSourceInfo, innerSyntaxTree!));
         }
 
-        return trees.ToImmutableArray();
+        syntaxTree = trees.ToImmutableArray();
+        return true;
+    }
+
+    private void AddBadTokenDiagnostic(CSMLRegistrationInfo csmlSourceInfo, SyntaxError? syntaxError)
+    {
+        var syntaxTree = csmlSourceInfo.SyntaxTree;
+        var CSMLCode = csmlSourceInfo.CSMLCode;
+        var message = syntaxError is not null ?
+            $"""
+            There was an error verifying the syntax: {syntaxError?.GetType()} with message: {syntaxError?.Message}"
+            """ :
+            $"""
+            The code reported an error, but the error object was null (Compiler error)
+            """;
+        _context.ReportDiagnostic(
+            Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    "CSML0",
+                    "Syntax Error",
+                    message,
+                    "CSML.SyntaxError",
+                    DiagnosticSeverity.Error,
+                    true),
+                Location.Create(syntaxTree, CSMLCode.TextSpan))
+            );
     }
 
     private static CSMLSyntaxToken[] GetUncheckedTokens(string text)
