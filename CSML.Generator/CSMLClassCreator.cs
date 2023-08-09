@@ -130,7 +130,7 @@ internal static class CSMLClassCreator
     private static void AppendSetupCodeFromNode(StringBuilder sb, TagOpeningSyntax syntaxNode, string lastCreatedNode, ref int varCount)
     {
         var type = syntaxNode.Type;
-        string? typeVar = null;
+        string? typeVar;
         if (syntaxNode.Name is null) {
             typeVar = "@_" + type + varCount;
             _ = sb.Append("        var ").Append(typeVar).Append(" = ").Append(type).AppendLine(".New();");
@@ -139,6 +139,7 @@ internal static class CSMLClassCreator
             typeVar = "self." + syntaxNode.Name;
             _ = sb.Append("        ").Append(typeVar).Append(" = ").Append(type).AppendLine(".New();");
         }
+
         foreach (var child in syntaxNode.DirectChildren) {
             if (child is TagOpeningSyntax tag) {
                 varCount++;

@@ -119,6 +119,7 @@ public class CSMLSyntaxTreeVerifier
                 syntaxError = null;
                 return true;
             }
+
             syntaxError = new ClosingTagUnableToCloseAnythingSyntaxError($"""
                         Last type on stack: {openTags.Peek()}
                         """);
