@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
+﻿using System.Collections.Immutable;
 using CSML.Generator;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 
 namespace CSML.Compiler;
 
@@ -28,7 +21,7 @@ public class CSMLCompiler
         _syntaxTreeCreator = new SyntaxTreeCreator(_context, _tokenCreator, _tokenVerifier);
     }
 
-    public CSMLCompilation? GetSyntaxTrees(CSMLRegistrationInfo[] csmlCodes)
+    public CSMLCompilation? GetCompilation(CSMLRegistrationInfo[] csmlCodes)
     {
         var success = _syntaxTreeCreator.GetSyntaxTreesUnverified(csmlCodes, out var syntaxTreesUnverified);
         if (success is false) {
