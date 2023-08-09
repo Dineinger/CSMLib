@@ -10,6 +10,7 @@ public enum SyntaxType
     SlashToken,
     EndOfLineTrivia,
     WhitespaceTrivia,
-    EndOfFileTrivia
+    EndOfFileTrivia,
+    Hashtag
 }
 

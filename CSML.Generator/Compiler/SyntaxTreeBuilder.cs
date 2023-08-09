@@ -59,7 +59,7 @@ internal class SyntaxTreeBuilder
         var children = builder.Children.Select(Build).ToList();
         CSMLSyntaxNode node = builder.SyntaxNodeKind switch
         {
-            SyntaxNodeKind.TagOpeningSyntax => new TagOpeningSyntax(tokens, children, GetTagOpeningSyntaxType(tokens)),
+            SyntaxNodeKind.TagOpeningSyntax => new TagOpeningSyntax(tokens, children, GetTagOpeningSyntaxType(tokens), GetTagOpeningSyntaxName(tokens)),
             SyntaxNodeKind.TagClosingSyntax => new TagClosingSyntax(tokens, children, GetTagClosingSyntaxType(tokens)),
             SyntaxNodeKind.CSMLComponentOpeningSyntax => new CSMLComponentOpeningSyntax(tokens, children, GetComponentType(tokens), "object"),
             SyntaxNodeKind.CompilationUnit => new CSMLCompilationUnit(children),
@@ -67,6 +67,23 @@ internal class SyntaxTreeBuilder
         };
 
         return node;
+    }
+
+    private string? GetTagOpeningSyntaxName(CSMLSyntaxToken[] tokens)
+    {
+        for (var i = 0; i < tokens.Length; i++) {
+            var token = tokens[i];
+            if (token.SyntaxType == SyntaxType.Hashtag) {
+                var nextToken = tokens[i + 1];
+                if (nextToken.SyntaxType != SyntaxType.Identifier) {
+                    throw new NotImplementedException("There should be an identifier after an #, diagnostic handling has to be handled in future");
+                }
+
+                return (string)nextToken.Value!;
+            }
+        }
+
+        return null;
     }
 
     private string GetComponentType(CSMLSyntaxToken[] tokens)

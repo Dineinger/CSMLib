@@ -11,11 +11,13 @@ public sealed class TagOpeningSyntax : CSMLSyntaxNode
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 
     public string Type { get; }
+    public string? Name { get; }
     public IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
-    public TagOpeningSyntax(CSMLSyntaxToken[] tokens, List<CSMLSyntaxNode> directChildren, string type)
+    public TagOpeningSyntax(CSMLSyntaxToken[] tokens, List<CSMLSyntaxNode> directChildren, string type, string? name)
     {
         Type = type;
+        Name = name;
         _tokens = tokens;
         _directChildren = directChildren;
     }

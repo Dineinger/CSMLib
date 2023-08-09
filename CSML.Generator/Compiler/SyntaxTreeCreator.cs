@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;
 
-public class SyntaxTreeCreator
+internal class SyntaxTreeCreator
 {
     private readonly SourceProductionContext _context;
     private readonly TokenCreator _tokenCreator;
@@ -118,7 +118,7 @@ public class SyntaxTreeCreator
 
     private bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, ReadOnlySpan<CSMLSyntaxToken> tokens, out SyntaxError? syntaxError)
     {
-        var isOpeningSyntax = _tokenVerifier.VerifyTokensFor_TagOpeningSyntax(tokens);
+        var isOpeningSyntax = _tokenVerifier.VerifyTokensFor_TagOpeningSyntax(tokens, out var innerSyntaxError);
         if (isOpeningSyntax) {
             var verifiedTokens = tokens.ToArray();
 
@@ -141,7 +141,8 @@ public class SyntaxTreeCreator
             return true;
         }
 
-        syntaxError = new TagSyntaxError($"""
+        syntaxError = innerSyntaxError
+            ?? new TagSyntaxError($"""
             Tag does not fit any allowed syntax
             """);
         return false;

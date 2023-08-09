@@ -27,6 +27,8 @@ public struct CSMLSyntaxToken
 
     public static CSMLSyntaxToken EndOfLineTrivia => new(SyntaxType.EndOfLineTrivia);
 
+    public static CSMLSyntaxToken Hashtag => new(SyntaxType.Hashtag);
+
     internal static CSMLSyntaxToken Identifier(string buffer) =>
         new(SyntaxType.Identifier)
         {

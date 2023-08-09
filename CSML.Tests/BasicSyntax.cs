@@ -8,12 +8,12 @@ public class BasicSyntax
         MainPage c = CSMLTranslator.From<MainPage>(
             """
             <MainPage>
-                <Div>
-                    <Div>
-                        <Label></Label>
+                <Div #One>
+                    <Div #OneOne>
+                        <Label #Text></Label>
                     </Div>
-                    <Div>
-                        <Label></Label>
+                    <Div #OneTwo>
+                        <Label #TextTwo></Label>
                     </Div>
                 </Div>
             </MainPage>

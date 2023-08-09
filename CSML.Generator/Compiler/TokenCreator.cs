@@ -55,7 +55,8 @@ public class TokenCreator
             case '/': tokenToAdd = CSMLSyntaxToken.SlashToken; return false;
             case '\n' or '\r': tokenToAdd = CSMLSyntaxToken.EndOfLineTrivia; return false; // TODO: "\r\n" implementieren
             case ' ': tokenToAdd = CSMLSyntaxToken.WhitespaceTrivia; return false;
-            default: throw new NotImplementedException($"""Symbol not implemented: "{c}" """);
+            case '#': tokenToAdd = CSMLSyntaxToken.Hashtag; return false;
+            default: throw new NotImplementedException($"""Symbol not implemented when creating tokens: "{c}" """);
         }
     }
 }
