@@ -7,6 +7,10 @@ namespace CSML.Generator;
 
 internal static class CSMLClassCreator
 {
+    private const string VERSION = "dev-1";
+    private const string COMPILER_NAME = "CSML Compiler";
+    private const string GENERATED_CODE_ATTRIBUTE = $$"""[GeneratedCode("{{COMPILER_NAME}}", "{{VERSION}}")]""";
+
     [Obsolete("use New() for setup")]
     public static string CreateSetupMethods(CSMLRegistrationInfo[] registrationInfo)
     {
@@ -57,17 +61,13 @@ internal static class CSMLClassCreator
             var typeToCreate = info.TypeToCreate.Text;
             StringBuilder sb = new();
             _ = sb.AppendLine("/// generated because a method called CSMLTranslator.From was used")
-                .Append("public sealed class ")
-                .Append(typeToCreate)
-                .Append(" : object, ICSMLClass<")
-                .Append(typeToCreate)
-                .AppendLine(">")
+                .AppendLine(GENERATED_CODE_ATTRIBUTE)
+                .Append("public sealed class ").Append(typeToCreate).Append(" : object, ICSMLClass<").Append(typeToCreate).AppendLine(">")
                 .AppendLine("{")
                 .AppendLine("    public readonly List<object> Children = new();")
                 .AppendLine()
-                .Append("    public static ")
-                .Append(typeToCreate)
-                .AppendLine(" New()")
+                .Append("    ").AppendLine(GENERATED_CODE_ATTRIBUTE)
+                .Append("    public static ").Append(typeToCreate).AppendLine(" New()")
                 .AppendLine("    {")
                 .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
 
@@ -139,14 +139,18 @@ internal static class CSMLClassCreator
 * Repo:https://github.com/Dineinger/CSMLib                                     *
 *******************************************************************************/
 
+using System.CodeDom.Compiler;
+
 namespace CSML;
 
+{{GENERATED_CODE_ATTRIBUTE}}
 public interface ICSMLClass<T>
     where T : ICSMLClass<T>
 {
     static abstract T New();
 }
 
+{{GENERATED_CODE_ATTRIBUTE}}
 public class CSMLTranslator
 {
     public static T From<T>(string csml)

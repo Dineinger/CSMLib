@@ -8,21 +8,26 @@ public class BasicSyntax
         MainPage c = CSMLTranslator.From<MainPage>(
             """
             <MainPage>
-                <C>
-                    <C>
-                        <C>
-                        </C>
-                    </C>
-                    <C>
-                    </C>
-                </C>
+                <Div>
+                    <Div>
+                        <Label></Label>
+                    </Div>
+                    <Div>
+                        <Label></Label>
+                    </Div>
+                </Div>
             </MainPage>
             """);
 
-        _ = CSMLTranslator.From<C>(
+        _ = CSMLTranslator.From<Div>(
             """
-            <C>
-            </C>
+            <Div>
+            </Div>
+            """);
+
+        _ = CSMLTranslator.From<Label>("""
+            <Label>
+            </Label>
             """);
 
         Assert.Equal(typeof(MainPage), c.GetType());
