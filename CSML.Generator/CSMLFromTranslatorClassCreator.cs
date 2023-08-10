@@ -7,52 +7,39 @@ namespace CSML.Generator;
 
 internal static class CSMLFromTranslatorClassCreator
 {
-    public static string[] CreateClasses(CSMLCompilation compilation)
+    public static (string TypeName, string Code) CreateFinalCode(CSMLSyntaxTree syntaxTree)
     {
-        var syntaxTrees = compilation.SyntaxTrees;
+        var info = syntaxTree.CSMLInfo;
+        var typeToCreate = info.Metadata.TypeToCreate;
 
-        var result = new string[syntaxTrees.Count];
-        for (var a = 0; a < syntaxTrees.Count; a++)
-        {
-            var syntaxTree = syntaxTrees[a];
-            var info = syntaxTree.CSMLInfo;
-            var typeToCreate = info.Metadata.TypeToCreate;
+        var typeToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
 
-            var typeToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
+        StringBuilder sb = new();
+        _ = sb
+            .AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
+            .AppendLine()
+            .AppendLine("namespace CSML;")
+            .AppendLine()
+            .AppendLine("/// generated because a method called CSMLTranslator.From was used")
+            .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
+            .Append("public sealed class ").Append(typeToCreate).Append(" : object, ICSMLClass<").Append(typeToCreate).AppendLine(">")
+            .AppendLine("{")
+            .AppendLine("    public readonly List<object> Children = new();");
 
-            StringBuilder sb = new();
-            _ = sb.AppendLine("/// generated because a method called CSMLTranslator.From was used")
-                .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-                .Append("public sealed class ").Append(typeToCreate).Append(" : object, ICSMLClass<").Append(typeToCreate).AppendLine(">")
-                .AppendLine("{")
-                .AppendLine("    public readonly List<object> Children = new();");
+        CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typeToCreateMembersFor);
 
-            CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typeToCreateMembersFor);
+        _ = sb.AppendLine()
+            .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
+            .Append("    public static ").Append(typeToCreate).AppendLine(" New()")
+            .AppendLine("    {")
+            .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
 
-            _ = sb.AppendLine()
-                .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-                .Append("    public static ").Append(typeToCreate).AppendLine(" New()")
-                .AppendLine("    {")
-                .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
+        CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
 
-            CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
+            _ = sb.AppendLine("        return self;")
+            .AppendLine("    }")
+            .AppendLine("}");
 
-              _ = sb.AppendLine("        return self;")
-                .AppendLine("    }")
-                .AppendLine("}");
-
-            result[a] = sb.ToString();
-        }
-
-        return result;
-    }
-
-    public static string CreateFinalCode(string classesAsText)
-    {
-        return $$"""
-            namespace CSML;
-
-            {{classesAsText}}
-            """;
+        return (typeToCreate, sb.ToString());
     }
 }

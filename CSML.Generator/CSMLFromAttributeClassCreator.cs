@@ -7,47 +7,39 @@ namespace CSML.Generator;
 
 internal class CSMLFromAttributeClassCreator
 {
-    internal static (string TypeName, string Code)[] CreateFinalCode(CSMLCompilation compilation)
+    internal static (string TypeName, string Code) CreateFinalCode(CSMLSyntaxTree syntaxTree)
     {
-        var syntaxTrees = compilation.SyntaxTrees;
+        StringBuilder sb = new();
 
-        var result = new (string, string)[syntaxTrees.Count];
-        for (int a = 0; a < syntaxTrees.Count; a++) {
-            StringBuilder sb = new();
+        var info = syntaxTree.CSMLInfo;
+        var typeToCreate = info.Metadata.TypeToCreate;
 
-            var syntaxTree = syntaxTrees[a];
-            var info = syntaxTree.CSMLInfo;
-            var typeToCreate = info.Metadata.TypeToCreate;
+        var typesToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
 
-            var typesToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
+        _ = sb.AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
+            .AppendLine()
+            .Append("namespace ").Append(syntaxTree.CSMLInfo.Metadata.Namespace).AppendLine(";")
+            .AppendLine()
+            .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
+            .Append("public partial class ").Append(typeToCreate).Append(" : ICSMLClass<").Append(typeToCreate).AppendLine(">")
+            .AppendLine("{")
+            .AppendLine("    public readonly List<object> Children = new();");
 
-            _ = sb.AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
-                .AppendLine()
-                .Append("namespace ").Append(syntaxTree.CSMLInfo.Metadata.Namespace).AppendLine(";")
-                .AppendLine()
-                .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-                .Append("public partial class ").Append(typeToCreate).Append(" : ICSMLClass<").Append(typeToCreate).AppendLine(">")
-                .AppendLine("{")
-                .AppendLine("    public readonly List<object> Children = new();");
+        CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typesToCreateMembersFor);
 
-            CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typesToCreateMembersFor);
+        _ = sb.AppendLine()
+            .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
+            .Append("    public static ").Append(typeToCreate).AppendLine(" New()")
+            .AppendLine("    {")
+            .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
 
-            _ = sb.AppendLine()
-                .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-                .Append("    public static ").Append(typeToCreate).AppendLine(" New()")
-                .AppendLine("    {")
-                .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
+        CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
 
-            CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
+        _ = sb.AppendLine("        return self;")
+            .AppendLine("    }")
+            .AppendLine("}");
 
-            _ = sb.AppendLine("        return self;")
-                .AppendLine("    }")
-                .AppendLine("}");
-
-            result[a] = (typeToCreate, sb.ToString());
-        }
-
-        return result;
+        return (typeToCreate, sb.ToString());
     }
 }
 

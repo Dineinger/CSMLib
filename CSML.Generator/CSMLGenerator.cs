@@ -22,30 +22,27 @@ public class CSMLGenerator : IIncrementalGenerator
             {
                 context.AddSource("CSMLBasics.generated.cs", CodeSnippets.CreateBasicCode());
 
-                GenerateCodeForCSMLTranslator(context, compilation);
-                GenerateCodeForCSMLAttribute(context, compilation);
+                var csmlFromAttribute = GetCompilationFromAttributes(context, compilation);
+                var csmlFromTranslator = GetCompilationFromTranslator(context, compilation);
+
+                var finalCode = CSMLClassCreator.CreateClasses(csmlFromAttribute, csmlFromTranslator);
+
+                foreach (var (TypeName, Code) in finalCode) {
+                    context.AddSource($"{TypeName}.generated.cs", Code);
+                }
             });
     }
 
-    private static void GenerateCodeForCSMLAttribute(SourceProductionContext context, Compilation compilation)
+    private static CSMLCompilation? GetCompilationFromAttributes(SourceProductionContext context, Compilation compilation)
     {
         var csmlInfo = CSMLCsharpCodeAnalizer.CSMLAttribute.GetCSMLInfo(compilation);
 
         var compiler = new CSMLCompiler(context);
         var csmlSyntaxTrees = compiler.GetCompilation(csmlInfo);
-
-        if (csmlSyntaxTrees is null) {
-            throw new NotImplementedException();
-        }
-
-        var finalCode = CSMLFromAttributeClassCreator.CreateFinalCode(csmlSyntaxTrees);
-
-        foreach (var (TypeName, Code) in finalCode) {
-            context.AddSource($"{TypeName}.generated.cs", Code);
-        }
+        return csmlSyntaxTrees;
     }
 
-    private static void GenerateCodeForCSMLTranslator(SourceProductionContext context, Compilation compilation)
+    private static CSMLCompilation? GetCompilationFromTranslator(SourceProductionContext context, Compilation compilation)
     {
         // Analizing C# Code
         var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
@@ -54,16 +51,6 @@ public class CSMLGenerator : IIncrementalGenerator
         // Analizing CSML Code
         var compiler = new CSMLCompiler(context);
         var csmlSyntaxTrees = compiler.GetCompilation(csmlInvocationInfo);
-
-        if (csmlSyntaxTrees is null) {
-            return;
-        }
-
-        // Generate Code
-        var classesAsTexts = CSMLFromTranslatorClassCreator.CreateClasses(csmlSyntaxTrees);
-        var classesAsText = String.Join("\n\n", classesAsTexts);
-
-        var finalCode = CSMLFromTranslatorClassCreator.CreateFinalCode(classesAsText);
-        context.AddSource("CSMLTranslator.generated.cs", finalCode);
+        return csmlSyntaxTrees;
     }
 }
