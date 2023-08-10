@@ -1,15 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using System.Diagnostics.CodeAnalysis;
-using System.Collections.Immutable;
-using System.Text;
-using System.Text.RegularExpressions;
 using CSML.Compiler;
-using CSML.Compiler.Syntax;
-using System.CodeDom.Compiler;
-using System.Dynamic;
+using CSML.Generator.Compiler.FromAttribute;
+using CSML.Generator.Compiler.FromTranslator;
 
 namespace CSML.Generator;
 
@@ -23,34 +15,27 @@ public class CSMLGenerator : IIncrementalGenerator
             {
                 context.AddSource("CSMLBasics.generated.cs", CodeSnippets.CreateBasicCode());
 
-                var csmlCompilation = GetCompilation(context, compilation,
-                    x => CSMLCsharpCodeAnalizer.CSMLAttribute.GetCSMLInfo(compilation),
-                    x =>
-                    {
-                        var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
-                        var csmlInvocationInfo = CSMLCsharpCodeAnalizer.GetInfoFromCSMLRegistration(translatorInvocation);
-                        return csmlInvocationInfo;
-                    });
+                var compiler = new CSMLCompiler(context);
 
-                var finalCode = CSMLClassCreator.CreateClasses(csmlCompilation);
+                var csmlCompilation = compiler.GetCompilation(compilation,
+                    CSMLCsharpCodeAnalizer.Attribute.GetCSMLInfo,
+                    CSMLCsharpCodeAnalizer.Translator.GetInfoFromCSMLRegistration);
+
+                if (csmlCompilation is null) {
+                    throw new NotImplementedException("compilation from CSML compiler was null");
+                }
+
+                var finalCode = CSMLClassCreator.CreateClasses(csmlCompilation,
+                    from => from switch
+                    {
+                        CSMLSourceLocation.CSMLTranslator => CSMLFromTranslatorClassCreator.CreateFinalCode,
+                        CSMLSourceLocation.CSMLAttribute => CSMLFromAttributeClassCreator.CreateFinalCode,
+                        _ => throw new NotImplementedException("code source not implemented when creating C# code"),
+                    });
 
                 foreach (var (TypeName, Code) in finalCode) {
                     context.AddSource($"{TypeName}.generated.cs", Code);
                 }
             });
-    }
-
-    private static CSMLCompilation? GetCompilation(SourceProductionContext context, Compilation compilation, params Func<Compilation, IReadOnlyList<CSMLInfo>>[] csmlGetter)
-    {
-        List<CSMLInfo> csmlInfos = new();
-
-        foreach (var getter in csmlGetter)
-        {
-            csmlInfos.AddRange(getter(compilation));
-        }
-
-        var compiler = new CSMLCompiler(context);
-        var csmlSyntaxTrees = compiler.GetCompilation(csmlInfos);
-        return csmlSyntaxTrees;
     }
 }

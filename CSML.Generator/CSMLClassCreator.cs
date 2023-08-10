@@ -1,29 +1,16 @@
 ﻿using CSML.Compiler;
-using CSML.Generator.Compiler.FromAttribute;
-using CSML.Generator.Compiler.FromTranslator;
+using CSML.Compiler.Syntax;
 
 namespace CSML.Generator;
 
 internal static class CSMLClassCreator
 {
-    public static IReadOnlyList<(string TypeName, string Code)> CreateClasses(params CSMLCompilation?[] compilations)
+    public static IReadOnlyList<(string TypeName, string Code)> CreateClasses(CSMLCompilation compilation, Func<CSMLSourceLocation, Func<CSMLSyntaxTree, (string, string)>> locations)
     {
         List<(string, string)> result = new ();
 
-        foreach (var compilation in compilations) {
-            if (compilation is null) { continue; }
-
-            foreach (var syntaxTree in compilation.SyntaxTrees) {
-                switch (syntaxTree.CSMLInfo.Metadata.From) {
-                    case CSMLSourceLocation.CSMLTranslator:
-                        result.Add(CSMLFromTranslatorClassCreator.CreateFinalCode(syntaxTree));
-                        break;
-                    case CSMLSourceLocation.CSMLAttribute:
-                        result.Add(CSMLFromAttributeClassCreator.CreateFinalCode(syntaxTree));
-                        break;
-                    default: throw new NotImplementedException("code source not implemented when creating C# code");
-                }
-            }
+        foreach (var syntaxTree in compilation.SyntaxTrees) {
+            result.Add(locations(syntaxTree.CSMLInfo.Metadata.From)(syntaxTree));
         }
 
         return result;

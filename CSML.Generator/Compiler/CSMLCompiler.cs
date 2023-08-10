@@ -34,4 +34,16 @@ public class CSMLCompiler
 
         return new CSMLCompilation(syntaxTreesVerified.Select(x => x.CSMLSyntaxTree).ToImmutableArray());
     }
+
+    public CSMLCompilation? GetCompilation(Compilation compilation, params Func<Compilation, IReadOnlyList<CSMLInfo>>[] csmlGetter)
+    {
+        List<CSMLInfo> csmlInfos = new();
+
+        foreach (var getter in csmlGetter) {
+            csmlInfos.AddRange(getter(compilation));
+        }
+
+        var csmlSyntaxTrees = GetCompilation(csmlInfos);
+        return csmlSyntaxTrees;
+    }
 }
