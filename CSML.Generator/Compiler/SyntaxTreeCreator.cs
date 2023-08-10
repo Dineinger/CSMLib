@@ -20,10 +20,10 @@ internal class SyntaxTreeCreator
         _tokenVerifier = tokenVerifier;
     }
 
-    public bool GetSyntaxTreesUnverified(CSMLRegistrationInfo[] csmlCodes, out ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTree)
+    public bool GetSyntaxTreesUnverified(IReadOnlyList<CSMLInfo> info, out ImmutableArray<(CSMLInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTree)
     {
-        List<(CSMLRegistrationInfo, CSMLSyntaxTree)> trees = new();
-        foreach (var csmlSourceInfo in csmlCodes) {
+        List<(CSMLInfo, CSMLSyntaxTree)> trees = new();
+        foreach (var csmlSourceInfo in info) {
             var success = GetSyntaxTreeUnverified(csmlSourceInfo, out var innerSyntaxTree, out var innerSyntaxError);
             if (success is false) {
                 AddBadTokenDiagnostic(csmlSourceInfo, innerSyntaxError);
@@ -37,7 +37,7 @@ internal class SyntaxTreeCreator
         return true;
     }
 
-    private void AddBadTokenDiagnostic(CSMLRegistrationInfo csmlSourceInfo, SyntaxError? syntaxError)
+    private void AddBadTokenDiagnostic(CSMLInfo csmlSourceInfo, SyntaxError? syntaxError)
     {
         var syntaxTree = csmlSourceInfo.SyntaxTree;
         var CSMLCode = csmlSourceInfo.CSMLCode;
@@ -61,7 +61,7 @@ internal class SyntaxTreeCreator
             );
     }
 
-    private bool GetSyntaxTreeUnverified(CSMLRegistrationInfo info, out CSMLSyntaxTree? syntaxTree, out SyntaxError? syntaxError)
+    private bool GetSyntaxTreeUnverified(CSMLInfo info, out CSMLSyntaxTree? syntaxTree, out SyntaxError? syntaxError)
     {
         var code = info.CSMLCode.Value;
         var uncheckedTokens = _tokenCreator.GetUncheckedTokens(code);

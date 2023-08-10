@@ -21,7 +21,7 @@ public class CSMLCompiler
         _syntaxTreeCreator = new SyntaxTreeCreator(_context, _tokenCreator, _tokenVerifier);
     }
 
-    public CSMLCompilation? GetCompilation(CSMLRegistrationInfo[] csmlCodes)
+    public CSMLCompilation? GetCompilation(IReadOnlyList<CSMLInfo> csmlCodes)
     {
         var success = _syntaxTreeCreator.GetSyntaxTreesUnverified(csmlCodes, out var syntaxTreesUnverified);
         if (success is false) {

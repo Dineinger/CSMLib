@@ -1,76 +1,36 @@
 ﻿using CSML.Compiler;
 using CSML.Compiler.Syntax;
-using Microsoft.CodeAnalysis;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
 namespace CSML.Generator;
 
-internal static class CSMLClassCreator
+internal class CSMLFromAttributeClassCreator
 {
-    [Obsolete("use New() for setup")]
-    public static string CreateSetupMethods(CSMLRegistrationInfo[] registrationInfo)
-    {
-        StringBuilder sb = new();
-
-        foreach (var info in registrationInfo)
-        {
-            var typeToCreate = info.TypeToCreate.Text;
-            _ = sb.Append("    private static void Setup_")
-                .Append(typeToCreate)
-                .Append("(")
-                .Append(typeToCreate)
-                .AppendLine(" result)")
-                .AppendLine("    {")
-                .AppendLine("""        throw new NotImplementedException("Method 'From' is not implemented by the Generator yet.");""")
-                .AppendLine("    }");
-        }
-
-        return sb.ToString();
-    }
-
-    public static string CreateFromCases(CSMLRegistrationInfo[] registrationInfo)
-    {
-        StringBuilder sb = new();
-
-        foreach (var info in registrationInfo)
-        {
-            var typeToCreate = info.TypeToCreate.Text;
-            _ = sb.Append("            case ")
-                .Append(typeToCreate)
-                .Append(" x: Setup_")
-                .Append(typeToCreate)
-                .AppendLine("(x); break;");
-        }
-
-        return sb.ToString();
-    }
-
-    public static string[] CreateClasses(CSMLCompilation compilation)
+    internal static (string TypeName, string Code)[] CreateFinalCode(CSMLCompilation compilation)
     {
         var syntaxTrees = compilation.SyntaxTrees;
 
-        var result = new string[syntaxTrees.Count];
-        for (var a = 0; a < syntaxTrees.Count; a++)
-        {
-            var syntaxTree = syntaxTrees[a];
-            var info = syntaxTree.RegistrationInfo;
-            var typeToCreate = info.TypeToCreate.Text;
-
-            var typeToCreateMembersFor = syntaxTree
-                .GetRoot()
-                .DescendingNodes()
-                .OfType<TagOpeningSyntax>()
-                .Where(x => x.Name is not null)
-                .ToArray();
-
+        var result = new (string, string)[syntaxTrees.Count];
+        for (int a = 0; a < syntaxTrees.Count; a++) {
             StringBuilder sb = new();
-            _ = sb.AppendLine("/// generated because a method called CSMLTranslator.From was used")
+
+            var syntaxTree = syntaxTrees[a];
+            var info = syntaxTree.CSMLInfo;
+            var typeToCreate = info.Metadata.TypeToCreate;
+
+            var typesToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
+
+            _ = sb.AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
+                .AppendLine()
+                .Append("namespace ").Append(syntaxTree.CSMLInfo.Metadata.Namespace).AppendLine(";")
+                .AppendLine()
                 .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-                .Append("public sealed class ").Append(typeToCreate).Append(" : object, ICSMLClass<").Append(typeToCreate).AppendLine(">")
+                .Append("public partial class ").Append(typeToCreate).Append(" : ICSMLClass<").Append(typeToCreate).AppendLine(">")
                 .AppendLine("{")
                 .AppendLine("    public readonly List<object> Children = new();");
 
-            AppendMembersOfNamedTags(sb, typeToCreateMembersFor);
+            CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typesToCreateMembersFor);
 
             _ = sb.AppendLine()
                 .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
@@ -78,29 +38,41 @@ internal static class CSMLClassCreator
                 .AppendLine("    {")
                 .Append("        var self = new ").Append(typeToCreate).AppendLine("();");
 
-            AppendSetupCode(sb, syntaxTree);
+            CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
 
-              _ = sb.AppendLine("        return self;")
+            _ = sb.AppendLine("        return self;")
                 .AppendLine("    }")
                 .AppendLine("}");
 
-            result[a] = sb.ToString();
+            result[a] = (typeToCreate, sb.ToString());
         }
 
         return result;
     }
+}
 
-    private static void AppendMembersOfNamedTags(StringBuilder sb, TagOpeningSyntax[] typeToCreateMembersFor)
+internal class CSMLClassCreatorCommonTools
+{
+    public static TagOpeningSyntax[] GetTypesToCreateMembersFor(CSMLSyntaxTree syntaxTree)
+    {
+        return syntaxTree
+            .GetRoot()
+            .DescendingNodes()
+            .OfType<TagOpeningSyntax>()
+            .Where(x => x.Name is not null)
+            .ToArray();
+    }
+
+    public static void AppendMembersOfNamedTags(StringBuilder sb, TagOpeningSyntax[] typeToCreateMembersFor)
     {
         _ = sb.AppendLine("    // generated by using #Identifier syntax inside an tag");
-        foreach (var type in typeToCreateMembersFor)
-        {
+        foreach (var type in typeToCreateMembersFor) {
             _ = sb.Append("    public ").Append(type.Type).Append(" ").Append(type.Name).AppendLine(" { get; set; }")
                   .AppendLine();
         }
     }
 
-    private static void AppendSetupCode(StringBuilder sb, CSMLSyntaxTree syntaxTree)
+    public static void AppendSetupCode(StringBuilder sb, CSMLSyntaxTree syntaxTree)
     {
         var root = syntaxTree.GetRoot();
         var varCount = 100;
@@ -151,14 +123,5 @@ internal static class CSMLClassCreator
         }
 
         _ = sb.Append("        ").Append(lastCreatedNode).Append(".Children.Add(").Append(typeVar).AppendLine(");");
-    }
-
-    public static string CreateFinalCode(string classesAsText)
-    {
-        return $$"""
-            namespace CSML;
-
-            {{classesAsText}}
-            """;
     }
 }

@@ -15,7 +15,7 @@ public class CSMLSyntaxTreeVerifier
         _context = context;
     }
 
-    public void VerifySyntaxTrees(ImmutableArray<(CSMLRegistrationInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTreesUnverified)
+    public void VerifySyntaxTrees(ImmutableArray<(CSMLInfo Info, CSMLSyntaxTree CSMLSyntaxTree)> syntaxTreesUnverified)
     {
         foreach (var syntaxTree in syntaxTreesUnverified) {
             if (VerifySyntaxTree(syntaxTree.CSMLSyntaxTree, out var syntaxError) == false) {
@@ -41,7 +41,7 @@ public class CSMLSyntaxTreeVerifier
     {
         Stack<CSMLSyntaxNode> openTags = new();
 
-        var success = VerifySyntaxNodes(openTags, syntaxTree.RegistrationInfo, syntaxTree.GetRoot().DirectChildren, out var innerSyntaxError);
+        var success = VerifySyntaxNodes(openTags, syntaxTree.CSMLInfo, syntaxTree.GetRoot().DirectChildren, out var innerSyntaxError);
 
         if (success is false) {
             syntaxError = innerSyntaxError;
@@ -52,7 +52,7 @@ public class CSMLSyntaxTreeVerifier
         return true;
     }
 
-    private static bool VerifySyntaxNodes(Stack<CSMLSyntaxNode> openTags, CSMLRegistrationInfo info, IEnumerable<CSMLSyntaxNode> nodes, out SyntaxError? syntaxError)
+    private static bool VerifySyntaxNodes(Stack<CSMLSyntaxNode> openTags, CSMLInfo info, IEnumerable<CSMLSyntaxNode> nodes, out SyntaxError? syntaxError)
     {
         foreach (var node in nodes) {
             var success = VerifySyntaxNode(openTags, info, node, out var innerSyntaxError);
@@ -72,12 +72,12 @@ public class CSMLSyntaxTreeVerifier
         return true;
     }
 
-    private static bool VerifySyntaxNode(Stack<CSMLSyntaxNode> openTags, CSMLRegistrationInfo info, CSMLSyntaxNode node, out SyntaxError? syntaxError)
+    private static bool VerifySyntaxNode(Stack<CSMLSyntaxNode> openTags, CSMLInfo info, CSMLSyntaxNode node, out SyntaxError? syntaxError)
     {
         if (node is CSMLComponentOpeningSyntax componentOpeningSyntax) {
-            if (componentOpeningSyntax.Type != info.TypeToCreate.ValueText) {
+            if (componentOpeningSyntax.Type != info.Metadata.TypeToCreate) {
                 syntaxError = new BadTypeSyntaxError($"""
-                    The component level tag has a type that is different from the generic parameter provided by the C# code
+                    The component level tag has a type that is different from the generic parameter provided by the C# code: string: {componentOpeningSyntax.Type}, C#: {info.Metadata.TypeToCreate}
                     """);
                 return false;
             }

@@ -1,5 +1,17 @@
 namespace CSML.Tests;
 
+[CSMLCode<App>("""
+    <App>
+        <MainPage #MainPage>
+
+        </MainPage>
+    </App>
+    """)]
+public partial class App
+{
+
+}
+
 public class BasicSyntax
 {
     [Fact]

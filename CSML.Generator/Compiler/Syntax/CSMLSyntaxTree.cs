@@ -6,11 +6,11 @@ namespace CSML.Compiler.Syntax;
 public class CSMLSyntaxTree
 {
     private readonly CSMLSyntaxNode _root;
-    private readonly CSMLRegistrationInfo _registrationInfo;
+    private readonly CSMLInfo _registrationInfo;
 
-    public CSMLRegistrationInfo RegistrationInfo => _registrationInfo;
+    public CSMLInfo CSMLInfo => _registrationInfo;
 
-    public CSMLSyntaxTree(CSMLSyntaxNode root, CSMLRegistrationInfo registrationInfo)
+    public CSMLSyntaxTree(CSMLSyntaxNode root, CSMLInfo registrationInfo)
     {
         _root = root;
         _registrationInfo = registrationInfo;
