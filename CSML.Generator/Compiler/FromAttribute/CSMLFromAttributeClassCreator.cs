@@ -1,32 +1,31 @@
 ﻿using CSML.Compiler;
 using CSML.Compiler.Syntax;
-using Microsoft.CodeAnalysis;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
-namespace CSML.Generator;
+namespace CSML.Generator.Compiler.FromAttribute;
 
-internal static class CSMLFromTranslatorClassCreator
+internal class CSMLFromAttributeClassCreator
 {
-    public static (string TypeName, string Code) CreateFinalCode(CSMLSyntaxTree syntaxTree)
+    internal static (string TypeName, string Code) CreateFinalCode(CSMLSyntaxTree syntaxTree)
     {
+        StringBuilder sb = new();
+
         var info = syntaxTree.CSMLInfo;
         var typeToCreate = info.Metadata.TypeToCreate;
 
-        var typeToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
+        var typesToCreateMembersFor = CSMLClassCreatorCommonTools.GetTypesToCreateMembersFor(syntaxTree);
 
-        StringBuilder sb = new();
-        _ = sb
-            .AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
+        _ = sb.AppendLine(CodeSnippets.GENERATED_CODE_COMMENT_HEADER)
             .AppendLine()
-            .AppendLine("namespace CSML;")
+            .Append("namespace ").Append(syntaxTree.CSMLInfo.Metadata.Namespace).AppendLine(";")
             .AppendLine()
-            .AppendLine("/// generated because a method called CSMLTranslator.From was used")
             .AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
-            .Append("public sealed class ").Append(typeToCreate).Append(" : object, ICSMLClass<").Append(typeToCreate).AppendLine(">")
+            .Append("public partial class ").Append(typeToCreate).Append(" : ICSMLClass<").Append(typeToCreate).AppendLine(">")
             .AppendLine("{")
             .AppendLine("    public readonly List<object> Children = new();");
 
-        CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typeToCreateMembersFor);
+        CSMLClassCreatorCommonTools.AppendMembersOfNamedTags(sb, typesToCreateMembersFor);
 
         _ = sb.AppendLine()
             .Append("    ").AppendLine(CodeSnippets.GENERATED_CODE_ATTRIBUTE)
@@ -36,7 +35,7 @@ internal static class CSMLFromTranslatorClassCreator
 
         CSMLClassCreatorCommonTools.AppendSetupCode(sb, syntaxTree);
 
-            _ = sb.AppendLine("        return self;")
+        _ = sb.AppendLine("        return self;")
             .AppendLine("    }")
             .AppendLine("}");
 

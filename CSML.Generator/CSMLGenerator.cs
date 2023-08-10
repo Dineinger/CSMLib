@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using CSML.Compiler;
 using CSML.Compiler.Syntax;
 using System.CodeDom.Compiler;
+using System.Dynamic;
 
 namespace CSML.Generator;
 
@@ -22,10 +23,16 @@ public class CSMLGenerator : IIncrementalGenerator
             {
                 context.AddSource("CSMLBasics.generated.cs", CodeSnippets.CreateBasicCode());
 
-                var csmlFromAttribute = GetCompilationFromAttributes(context, compilation);
-                var csmlFromTranslator = GetCompilationFromTranslator(context, compilation);
+                var csmlCompilation = GetCompilation(context, compilation,
+                    x => CSMLCsharpCodeAnalizer.CSMLAttribute.GetCSMLInfo(compilation),
+                    x =>
+                    {
+                        var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
+                        var csmlInvocationInfo = CSMLCsharpCodeAnalizer.GetInfoFromCSMLRegistration(translatorInvocation);
+                        return csmlInvocationInfo;
+                    });
 
-                var finalCode = CSMLClassCreator.CreateClasses(csmlFromAttribute, csmlFromTranslator);
+                var finalCode = CSMLClassCreator.CreateClasses(csmlCompilation);
 
                 foreach (var (TypeName, Code) in finalCode) {
                     context.AddSource($"{TypeName}.generated.cs", Code);
@@ -33,24 +40,17 @@ public class CSMLGenerator : IIncrementalGenerator
             });
     }
 
-    private static CSMLCompilation? GetCompilationFromAttributes(SourceProductionContext context, Compilation compilation)
+    private static CSMLCompilation? GetCompilation(SourceProductionContext context, Compilation compilation, params Func<Compilation, IReadOnlyList<CSMLInfo>>[] csmlGetter)
     {
-        var csmlInfo = CSMLCsharpCodeAnalizer.CSMLAttribute.GetCSMLInfo(compilation);
+        List<CSMLInfo> csmlInfos = new();
+
+        foreach (var getter in csmlGetter)
+        {
+            csmlInfos.AddRange(getter(compilation));
+        }
 
         var compiler = new CSMLCompiler(context);
-        var csmlSyntaxTrees = compiler.GetCompilation(csmlInfo);
-        return csmlSyntaxTrees;
-    }
-
-    private static CSMLCompilation? GetCompilationFromTranslator(SourceProductionContext context, Compilation compilation)
-    {
-        // Analizing C# Code
-        var translatorInvocation = CSMLCsharpCodeAnalizer.GetTranslatorInvocations(compilation);
-        var csmlInvocationInfo = CSMLCsharpCodeAnalizer.GetInfoFromCSMLRegistration(translatorInvocation);
-
-        // Analizing CSML Code
-        var compiler = new CSMLCompiler(context);
-        var csmlSyntaxTrees = compiler.GetCompilation(csmlInvocationInfo);
+        var csmlSyntaxTrees = compiler.GetCompilation(csmlInfos);
         return csmlSyntaxTrees;
     }
 }

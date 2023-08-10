@@ -1,4 +1,6 @@
 ﻿using CSML.Compiler;
+using CSML.Generator.Compiler.FromAttribute;
+using CSML.Generator.Compiler.FromTranslator;
 
 namespace CSML.Generator;
 
