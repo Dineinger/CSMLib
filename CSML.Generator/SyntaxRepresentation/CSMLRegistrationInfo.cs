@@ -1,8 +1,7 @@
-﻿using CSML.Compiler;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace CSML.Generator;
+namespace CSML.Generator.SyntaxRepresentation;
 
 public record struct CSMLInfo(SyntaxTree SyntaxTree, CSMLMetadata Metadata, CSMLRawCode CSMLCode);
 

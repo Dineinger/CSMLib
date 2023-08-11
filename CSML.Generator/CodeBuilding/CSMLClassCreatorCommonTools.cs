@@ -1,7 +1,7 @@
-﻿using CSML.Compiler.Syntax;
+﻿using CSML.Generator.SyntaxRepresentation;
 using System.Text;
 
-namespace CSML.Generator;
+namespace CSML.Generator.CodeBuilding;
 
 internal class CSMLClassCreatorCommonTools
 {

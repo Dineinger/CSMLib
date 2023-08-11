@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using CSML.Generator;
+using CSML.Generator.SyntaxRepresentation;
 using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;

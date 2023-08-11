@@ -1,10 +1,11 @@
 ﻿using CSML.Compiler;
+using CSML.Generator.SyntaxRepresentation;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 
-namespace CSML.Generator;
+namespace CSML.Generator.CsharpAnalizer;
 
 internal static class CSMLCsharpCodeAnalizer
 {
@@ -19,15 +20,19 @@ internal static class CSMLCsharpCodeAnalizer
         private static SyntaxToken? GetGenericParameterSyntaxToken(MemberAccessExpressionSyntax maex)
         {
             var children = maex.DescendantNodes();
-            var hasTranslatorClass = children.Any(x => x is IdentifierNameSyntax id && (id.Identifier.Text == CSML_TRANSLATOR_CLASS));
+            var hasTranslatorClass = children.Any(x => x is IdentifierNameSyntax id && id.Identifier.Text == CSML_TRANSLATOR_CLASS);
 
-            if (hasTranslatorClass) {
-                foreach (var child in children) {
-                    if (child is not GenericNameSyntax genericName) {
+            if (hasTranslatorClass)
+            {
+                foreach (var child in children)
+                {
+                    if (child is not GenericNameSyntax genericName)
+                    {
                         continue;
                     }
 
-                    if (genericName.Identifier.Text != CSMLTRANSLATOR_FROM) {
+                    if (genericName.Identifier.Text != CSMLTRANSLATOR_FROM)
+                    {
                         continue;
                     }
 
@@ -73,7 +78,8 @@ internal static class CSMLCsharpCodeAnalizer
                         .Select(maex => GetGenericParameterSyntaxToken(maex))
                         .Where(x => x.HasValue)
                         .Select(x => x!.Value);
-                    if (types.Count() != 1) {
+                    if (types.Count() != 1)
+                    {
                         throw new Exception("""There was more than one generic type given.""");
                     }
 
@@ -91,7 +97,8 @@ internal static class CSMLCsharpCodeAnalizer
                                 .Select(token => ((string?)token.Value, token, token.Span))
                                 .Where(x => x.Item1 is not null).Select(x => (x.Item1!, x.token, x.Span));
                         });
-                    if (codes.Count() != 1) {
+                    if (codes.Count() != 1)
+                    {
                         throw new Exception("""There was more than one multi line raw string literal given.""");
                     }
 
@@ -143,7 +150,8 @@ internal static class CSMLCsharpCodeAnalizer
                             || token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken)
                             || token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken));
 
-                    if (stringTokens.Count() != 1) {
+                    if (stringTokens.Count() != 1)
+                    {
                         throw new InvalidOperationException("The C# code for the CSMLAttribute seems to be wrong or CSML Compiler bug");
                     }
 

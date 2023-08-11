@@ -1,4 +1,4 @@
-﻿namespace CSML.Compiler.Syntax;
+﻿namespace CSML.Generator.SyntaxRepresentation;
 
 public enum SyntaxType
 {

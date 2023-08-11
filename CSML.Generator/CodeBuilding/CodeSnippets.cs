@@ -1,4 +1,4 @@
-﻿namespace CSML.Generator;
+﻿namespace CSML.Generator.CodeBuilding;
 
 internal static class CodeSnippets
 {

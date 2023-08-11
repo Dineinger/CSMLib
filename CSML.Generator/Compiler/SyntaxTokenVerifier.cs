@@ -1,5 +1,5 @@
-﻿using CSML.Compiler.Syntax;
-using CSML.Generator.Compiler.SyntaxErrors;
+﻿using CSML.Generator.CodeBuilding.SyntaxErrors;
+using CSML.Generator.SyntaxRepresentation;
 
 namespace CSML.Compiler;
 

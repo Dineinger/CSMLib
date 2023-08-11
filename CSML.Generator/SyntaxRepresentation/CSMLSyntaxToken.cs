@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CSML.Compiler.Syntax;
+namespace CSML.Generator.SyntaxRepresentation;
 
 public struct CSMLSyntaxToken
 {

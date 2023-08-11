@@ -1,7 +1,6 @@
-﻿using CSML.Generator;
-using System.Threading;
+﻿using System.Threading;
 
-namespace CSML.Compiler.Syntax;
+namespace CSML.Generator.SyntaxRepresentation;
 
 public class CSMLSyntaxTree
 {

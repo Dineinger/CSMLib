@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CSML.Generator.Compiler.SyntaxErrors;
+namespace CSML.Generator.CodeBuilding.SyntaxErrors;
 
 internal class SyntaxError
 {

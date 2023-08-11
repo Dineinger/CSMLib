@@ -1,8 +1,7 @@
 ﻿using System.Collections.Immutable;
-using CSML.Compiler.Syntax;
-using CSML.Generator;
+using CSML.Generator.CodeBuilding.SyntaxErrors;
 using CSML.Generator.Compiler;
-using CSML.Generator.Compiler.SyntaxErrors;
+using CSML.Generator.SyntaxRepresentation;
 using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;

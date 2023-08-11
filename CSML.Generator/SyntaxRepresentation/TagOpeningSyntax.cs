@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CSML.Compiler.Syntax;
+namespace CSML.Generator.SyntaxRepresentation;
 
 public sealed class TagOpeningSyntax : CSMLSyntaxNode
 {

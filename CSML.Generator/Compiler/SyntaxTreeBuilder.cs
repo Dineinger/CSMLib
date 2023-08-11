@@ -1,5 +1,6 @@
 ﻿using CSML.Compiler;
 using CSML.Compiler.Syntax;
+using CSML.Generator.SyntaxRepresentation;
 using System;
 using System.Collections;
 using System.Collections.Generic;

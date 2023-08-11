@@ -1,9 +1,9 @@
 ﻿using CSML.Compiler;
-using CSML.Compiler.Syntax;
+using CSML.Generator.SyntaxRepresentation;
 using Microsoft.CodeAnalysis;
 using System.Text;
 
-namespace CSML.Generator.Compiler.FromTranslator;
+namespace CSML.Generator.CodeBuilding.FromTranslator;
 
 internal static class CSMLFromTranslatorClassCreator
 {

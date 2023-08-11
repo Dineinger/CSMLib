@@ -1,7 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
 using CSML.Compiler;
 using CSML.Generator.Compiler.FromAttribute;
-using CSML.Generator.Compiler.FromTranslator;
+using CSML.Generator.CsharpAnalizer;
+using CSML.Generator.CodeBuilding.FromTranslator;
+using CSML.Generator.CodeBuilding;
+using CSML.Generator.SyntaxRepresentation;
 
 namespace CSML.Generator;
 

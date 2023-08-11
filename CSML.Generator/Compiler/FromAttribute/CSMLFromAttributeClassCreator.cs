@@ -1,5 +1,6 @@
 ﻿using CSML.Compiler;
-using CSML.Compiler.Syntax;
+using CSML.Generator.CodeBuilding;
+using CSML.Generator.SyntaxRepresentation;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 

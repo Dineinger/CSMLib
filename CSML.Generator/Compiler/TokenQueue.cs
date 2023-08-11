@@ -1,4 +1,4 @@
-﻿using CSML.Compiler.Syntax;
+﻿using CSML.Generator.SyntaxRepresentation;
 
 namespace CSML.Compiler;
 
