@@ -1,10 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using CSML.Compiler;
-using CSML.Generator.Compiler.FromAttribute;
 using CSML.Generator.CsharpAnalizer;
-using CSML.Generator.CodeBuilding.FromTranslator;
 using CSML.Generator.CodeBuilding;
-using CSML.Generator.SyntaxRepresentation;
 
 namespace CSML.Generator;
 
@@ -21,22 +18,14 @@ public class CSMLGenerator : IIncrementalGenerator
                 var compiler = new CSMLCompiler(context);
 
                 var csmlCompilation = compiler.GetCompilation(compilation,
-                    CSMLCsharpCodeAnalizer.Attribute.GetCSMLInfo,
-                    CSMLCsharpCodeAnalizer.Translator.GetInfoFromCSMLRegistration);
+                        CSMLCsharpCodeAnalizer.Attribute.GetCSMLInfo,
+                        CSMLCsharpCodeAnalizer.Translator.GetInfoFromCSMLRegistration
+                    )
+                    ?? throw new NotImplementedException("compilation from CSML compiler was null");
 
-                if (csmlCompilation is null) {
-                    throw new NotImplementedException("compilation from CSML compiler was null");
-                }
+                var finalCodes = CSMLClassCreator.CreateClasses(csmlCompilation);
 
-                var finalCode = CSMLClassCreator.CreateClasses(csmlCompilation,
-                    from => from switch
-                    {
-                        CSMLSourceLocation.CSMLTranslator => CSMLFromTranslatorClassCreator.CreateFinalCode,
-                        CSMLSourceLocation.CSMLAttribute => CSMLFromAttributeClassCreator.CreateFinalCode,
-                        _ => throw new NotImplementedException("code source not implemented when creating C# code"),
-                    });
-
-                foreach (var (TypeName, Code) in finalCode) {
+                foreach (var (TypeName, Code) in finalCodes) {
                     context.AddSource($"{TypeName}.generated.cs", Code);
                 }
             });

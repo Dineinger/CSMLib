@@ -1,11 +1,5 @@
-﻿using CSML.Compiler;
-using CSML.Compiler.Syntax;
-using CSML.Generator.SyntaxRepresentation;
-using System;
+﻿using CSML.Generator.SyntaxRepresentation;
 using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
 
 namespace CSML.Generator.Compiler;
 internal class SyntaxTreeBuilder

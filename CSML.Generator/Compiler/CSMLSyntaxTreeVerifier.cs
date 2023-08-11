@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
-using CSML.Generator.CodeBuilding.SyntaxErrors;
 using CSML.Generator.SyntaxRepresentation;
+using CSML.Generator.SyntaxRepresentation.SyntaxErrors;
 using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;
