@@ -1,10 +1,11 @@
 ﻿using System.Collections.Immutable;
+using CSML.Generator.CsharpAnalizer;
 using CSML.Generator.SyntaxRepresentation;
 using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;
 
-public class CSMLCompiler
+internal class CSMLCompiler
 {
     private readonly SourceProductionContext _context;
     private readonly SyntaxTreeCreator _syntaxTreeCreator;
@@ -35,12 +36,12 @@ public class CSMLCompiler
         return new CSMLCompilation(syntaxTreesVerified.Select(x => x.CSMLSyntaxTree).ToImmutableArray());
     }
 
-    public CSMLCompilation? GetCompilation(Compilation compilation, params Func<Compilation, IReadOnlyList<CSMLInfo>>[] csmlGetter)
+    public CSMLCompilation? GetCompilation(Compilation compilation, params ICSMLCsharpCodeAnalizer[] csmlGetter)
     {
         List<CSMLInfo> csmlInfos = new();
 
         foreach (var getter in csmlGetter) {
-            csmlInfos.AddRange(getter(compilation));
+            csmlInfos.AddRange(getter.GetCSMLInfo(compilation));
         }
 
         var csmlSyntaxTrees = GetCompilation(csmlInfos);

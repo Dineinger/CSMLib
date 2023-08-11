@@ -18,8 +18,8 @@ public class CSMLGenerator : IIncrementalGenerator
                 var compiler = new CSMLCompiler(context);
 
                 var csmlCompilation = compiler.GetCompilation(compilation,
-                        CSMLCsharpCodeAnalizer.Attribute.GetCSMLInfo,
-                        CSMLCsharpCodeAnalizer.Translator.GetInfoFromCSMLRegistration
+                        CSMLCsharpCodeAnalizers.Attribute,
+                        CSMLCsharpCodeAnalizers.Translator
                     )
                     ?? throw new NotImplementedException("compilation from CSML compiler was null");
 
