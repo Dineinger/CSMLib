@@ -28,12 +28,7 @@ internal class CSMLAttributeAnalizer : ICSMLCsharpCodeAnalizer
 
                 var needed = stringLiteralExpressions.First(); // optional/additional parameters should always came after
 
-                var stringTokens = needed
-                    .DescendantTokens()
-                    .Where(token =>
-                        token.IsKind(SyntaxKind.StringLiteralToken)
-                        || token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken)
-                        || token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken));
+                var stringTokens = GetStringTokens(needed);
 
                 if (stringTokens.Count() != 1) {
                     throw new InvalidOperationException("The C# code for the CSMLAttribute seems to be wrong or CSML Compiler bug");
@@ -42,22 +37,52 @@ internal class CSMLAttributeAnalizer : ICSMLCsharpCodeAnalizer
                 var stringToken = stringTokens.First();
                 var value = stringToken.ValueText;
 
-                var typeToCreate = attr
-                    .ChildNodes()
-                    .OfType<GenericNameSyntax>()
-                    .First() // should be exactly one always
-                    .DescendantNodes()
-                    .OfType<TypeArgumentListSyntax>()
-                    .First() // should be exactly one always
-                    .DescendantNodes()
-                    .OfType<IdentifierNameSyntax>()
-                    .First()
-                    .Identifier
-                    .ValueText;
+                var typeToCreate = GetTypeToCreate(attr);
+                var @namespace = GetNamespace(attr.SyntaxTree);
 
-                return new CSMLInfo(attr.SyntaxTree, new(typeToCreate, "CSML.Tests" /* TODO: Namespace*/, CSMLSourceLocation.CSMLAttribute), new CSMLRawCode(value, stringToken, stringToken.Span));
+                return new CSMLInfo(attr.SyntaxTree, new(typeToCreate, @namespace, CSMLSourceLocation.CSMLAttribute), new CSMLRawCode(value, stringToken, stringToken.Span));
             })
             .ToImmutableArray();
+    }
+
+    private string GetNamespace(SyntaxTree syntaxTree)
+    {
+        return syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<FileScopedNamespaceDeclarationSyntax>()
+            .First() // only one in one file / syntax tree, other namespaces could have more than one block (?)
+            .ChildNodes()
+            .OfType<QualifiedNameSyntax>()
+            .First()
+            .GetText()
+            .ToString();
+    }
+
+    private static IEnumerable<SyntaxToken> GetStringTokens(ExpressionSyntax needed)
+    {
+        return needed
+            .DescendantTokens()
+            .Where(token =>
+                token.IsKind(SyntaxKind.StringLiteralToken)
+                || token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken)
+                || token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken));
+    }
+
+    private static string GetTypeToCreate(AttributeSyntax attr)
+    {
+        var typeToCreate = attr
+            .ChildNodes()
+            .OfType<GenericNameSyntax>()
+            .First() // should be exactly one always
+            .DescendantNodes()
+            .OfType<TypeArgumentListSyntax>()
+            .First() // should be exactly one always
+            .DescendantNodes()
+            .OfType<IdentifierNameSyntax>()
+            .First()
+            .Identifier
+            .ValueText;
+        return typeToCreate;
     }
 
     private IReadOnlyList<AttributeSyntax> GetAttribute(IEnumerable<SyntaxTree> syntaxTrees)
