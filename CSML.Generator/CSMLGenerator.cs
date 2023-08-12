@@ -2,6 +2,7 @@
 using CSML.Compiler;
 using CSML.Generator.CsharpAnalizer;
 using CSML.Generator.CodeBuilding;
+using CSML.Generator.SyntaxRepresentation;
 
 namespace CSML.Generator;
 
@@ -17,11 +18,27 @@ public class CSMLGenerator : IIncrementalGenerator
 
                 var compiler = new CSMLCompiler(context);
 
-                var csmlCompilation = compiler.GetCompilation(compilation,
+                var csmlCompilation = compiler.GetCompilation(compilation, out var syntaxError,
                         CSMLCsharpCodeAnalizers.Attribute,
                         CSMLCsharpCodeAnalizers.Translator
-                    )
-                    ?? throw new NotImplementedException("compilation from CSML compiler was null");
+                    );
+
+                if (csmlCompilation is null) {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                "CSML0",
+                                "Syntax Error",
+                                $"""
+                                {syntaxError?.Message}
+                                """,
+                                "CSML.SyntaxError",
+                                DiagnosticSeverity.Error,
+                                        true),
+                                        Location.None)
+                                        );
+                    return;
+                }
 
                 var finalCodes = CSMLClassCreator.CreateClasses(csmlCompilation);
 

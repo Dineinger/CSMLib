@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using CSML.Generator.CsharpAnalizer;
 using CSML.Generator.SyntaxRepresentation;
+using CSML.Generator.SyntaxRepresentation.SyntaxErrors;
 using Microsoft.CodeAnalysis;
 
 namespace CSML.Compiler;
@@ -22,10 +23,11 @@ internal class CSMLCompiler
         _syntaxTreeCreator = new SyntaxTreeCreator(_context, _tokenCreator, _tokenVerifier);
     }
 
-    public CSMLCompilation? GetCompilation(IReadOnlyList<CSMLInfo> csmlCodes)
+    public CSMLCompilation? GetCompilation(IReadOnlyList<CSMLInfo> csmlCodes, out SyntaxError? syntaxError)
     {
         var success = _syntaxTreeCreator.GetSyntaxTreesUnverified(csmlCodes, out var syntaxTreesUnverified);
         if (success is false) {
+            syntaxError = new SyntaxError("could not create a syntax tree");
             return null;
         }
 
@@ -33,10 +35,11 @@ internal class CSMLCompiler
 
         var syntaxTreesVerified = syntaxTreesUnverified;
 
+        syntaxError = null;
         return new CSMLCompilation(syntaxTreesVerified.Select(x => x.CSMLSyntaxTree).ToImmutableArray());
     }
 
-    public CSMLCompilation? GetCompilation(Compilation compilation, params ICSMLCsharpCodeAnalizer[] csmlGetter)
+    public CSMLCompilation? GetCompilation(Compilation compilation, out SyntaxError? syntaxError, params ICSMLCsharpCodeAnalizer[] csmlGetter)
     {
         List<CSMLInfo> csmlInfos = new();
 
@@ -44,7 +47,7 @@ internal class CSMLCompiler
             csmlInfos.AddRange(getter.GetCSMLInfo(compilation));
         }
 
-        var csmlSyntaxTrees = GetCompilation(csmlInfos);
+        var csmlSyntaxTrees = GetCompilation(csmlInfos, out syntaxError);
         return csmlSyntaxTrees;
     }
 }

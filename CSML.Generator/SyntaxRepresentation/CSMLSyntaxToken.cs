@@ -29,6 +29,8 @@ public struct CSMLSyntaxToken
 
     public static CSMLSyntaxToken Hashtag => new(SyntaxType.Hashtag);
 
+    public static CSMLSyntaxToken At => new(SyntaxType.AtToken);
+
     internal static CSMLSyntaxToken Identifier(string buffer) =>
         new(SyntaxType.Identifier)
         {
