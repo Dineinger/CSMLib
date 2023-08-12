@@ -13,7 +13,7 @@ public class CSMLGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(context.CompilationProvider,
             static (context, compilation) =>
             {
-                context.AddSource("CSMLBasics.generated.cs", CodeSnippets.CreateBasicCode());
+                context.AddSource("CSMLBasics.generated.cs", CodeSnippets.BASIC_CODE);
 
                 var compiler = new CSMLCompiler(context);
 
