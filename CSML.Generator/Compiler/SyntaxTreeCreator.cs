@@ -117,8 +117,8 @@ internal class SyntaxTreeCreator
 
     private bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, ReadOnlySpan<CSMLSyntaxToken> tokens, out SyntaxError? syntaxError)
     {
-        var isOpeningSyntax = _tokenVerifier.VerifyTokensFor_TagOpeningSyntax(tokens, out var innerSyntaxError);
-        if (isOpeningSyntax) {
+        var openingSyntaxError = _tokenVerifier.TagOpeningSyntaxVerification.Verify(tokens);
+        if (openingSyntaxError is null) {
             var verifiedTokens = tokens.ToArray();
 
             if (builder.Contains(SyntaxNodeKind.CSMLComponentOpeningSyntax)) {
@@ -132,18 +132,20 @@ internal class SyntaxTreeCreator
             return true;
         }
 
-        var isClosingSyntax = _tokenVerifier.VerifyTokensFor_TagClosingSyntax(tokens);
-        if (isClosingSyntax) {
+        var closingSyntaxError = _tokenVerifier.TagClosingSyntax.Verify(tokens);
+        if (closingSyntaxError is null) {
             var verifiedTokens = tokens.ToArray();
             builder.AddAndOut(new SyntaxNodeBuilder(SyntaxNodeKind.TagClosingSyntax, verifiedTokens));
             syntaxError = null;
             return true;
         }
 
-        syntaxError = innerSyntaxError
+        syntaxError =
+            openingSyntaxError
+            ?? closingSyntaxError
             ?? new TagSyntaxError($"""
-            Tag does not fit any allowed syntax
-            """);
+                Tag does not fit any allowed syntax
+                """);
         return false;
     }
 }
