@@ -3,8 +3,8 @@
 internal static class CodeSnippets
 {
     public const string VERSION = "dev-1";
-    public const string COMPILER_NAME = "CSML Compiler";
-    public const string GENERATED_CODE_ATTRIBUTE = $$"""[System.CodeDom.Compiler.GeneratedCode("{{COMPILER_NAME}}", "{{VERSION}}")]""";
+    public const string COMPILER_NAME = "CSML.Generator";
+    public const string GENERATED_CODE_ATTRIBUTE = $$"""[global::System.CodeDom.Compiler.GeneratedCode("{{COMPILER_NAME}}", "{{VERSION}}")]""";
 
     public const string GENERATED_CODE_COMMENT_HEADER = """
         // generated code
