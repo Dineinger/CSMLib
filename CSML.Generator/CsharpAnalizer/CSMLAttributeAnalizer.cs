@@ -12,17 +12,21 @@ internal class CSMLAttributeAnalizer : ICSMLCsharpCodeAnalizer
 
     public IReadOnlyList<CSMLInfo> GetCSMLInfo(Compilation compilation)
     {
-        var attributes = GetAttribute(compilation.SyntaxTrees);
+        var attributes = GetClassesWithAttribute(compilation.SyntaxTrees);
         var infos = GetInfoFromAttributes(attributes);
         return infos;
     }
 
-    private IReadOnlyList<CSMLInfo> GetInfoFromAttributes(IReadOnlyList<AttributeSyntax> attributes)
+    private IReadOnlyList<CSMLInfo> GetInfoFromAttributes(IReadOnlyList<(ClassDeclarationSyntax Class, AttributeSyntax Attribute)> classes)
     {
-        return attributes
-            .Select(attr =>
+        return classes
+            .Select(c =>
             {
-                var stringLiteralExpressions = attr.DescendantNodes()
+                var attributeSyntax = c.Attribute;
+                var classSyntax = c.Class;
+                var syntaxTree = classSyntax.SyntaxTree;
+
+                var stringLiteralExpressions = attributeSyntax.DescendantNodes()
                     .OfType<ExpressionSyntax>()
                     .Where(x => x.IsKind(SyntaxKind.StringLiteralExpression));
 
@@ -37,12 +41,17 @@ internal class CSMLAttributeAnalizer : ICSMLCsharpCodeAnalizer
                 var stringToken = stringTokens.First();
                 var value = stringToken.ValueText;
 
-                var typeToCreate = GetTypeToCreate(attr);
-                var @namespace = GetNamespace(attr.SyntaxTree);
+                var typeToCreate = GetTypeToCreate(classSyntax);
+                var @namespace = GetNamespace(syntaxTree);
 
-                return new CSMLInfo(attr.SyntaxTree, new(typeToCreate, @namespace, CSMLSourceLocation.CSMLAttribute), new CSMLRawCode(value, stringToken, stringToken.Span));
+                return new CSMLInfo(syntaxTree, new(typeToCreate, @namespace, CSMLSourceLocation.CSMLAttribute), new CSMLRawCode(value, stringToken, stringToken.Span));
             })
             .ToImmutableArray();
+    }
+
+    private string GetTypeToCreate(ClassDeclarationSyntax classSyntax)
+    {
+        return classSyntax.ChildTokens().First(x => x.IsKind(SyntaxKind.IdentifierToken)).ValueText;
     }
 
     private string GetNamespace(SyntaxTree syntaxTree)
@@ -68,34 +77,34 @@ internal class CSMLAttributeAnalizer : ICSMLCsharpCodeAnalizer
                 || token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken));
     }
 
-    private static string GetTypeToCreate(AttributeSyntax attr)
-    {
-        var typeToCreate = attr
-            .ChildNodes()
-            .OfType<GenericNameSyntax>()
-            .First() // should be exactly one always
-            .DescendantNodes()
-            .OfType<TypeArgumentListSyntax>()
-            .First() // should be exactly one always
-            .DescendantNodes()
-            .OfType<IdentifierNameSyntax>()
-            .First()
-            .Identifier
-            .ValueText;
-        return typeToCreate;
-    }
-
-    private IReadOnlyList<AttributeSyntax> GetAttribute(IEnumerable<SyntaxTree> syntaxTrees)
+    private IReadOnlyList<(ClassDeclarationSyntax, AttributeSyntax)> GetClassesWithAttribute(IEnumerable<SyntaxTree> syntaxTrees)
     {
         var attributes = syntaxTrees
             .SelectMany(st => st
                 .GetRoot()
                 .DescendantNodes()
-                .OfType<AttributeSyntax>()
-                .Where(attr => attr
+                .OfType<ClassDeclarationSyntax>()
+                .Where(x => x
                     .DescendantNodes()
-                    .OfType<GenericNameSyntax>()
-                    .Any(gns => gns.Identifier.ValueText == CSML_ATTRIBUTE_IDENTIFIER)));
+                    .OfType<AttributeSyntax>()
+                    .Any(attr => attr
+                        .DescendantNodes()
+                        .OfType<IdentifierNameSyntax>()
+                        .Any(gns => gns.Identifier.ValueText == CSML_ATTRIBUTE_IDENTIFIER)
+                    )
+                )
+                .Select(c => (c, c
+                    .DescendantNodes()
+                    .OfType<AttributeSyntax>()
+                    .Where(attr => attr
+                        .DescendantNodes()
+                        .OfType<IdentifierNameSyntax>()
+                        .Any(gns => gns.Identifier.ValueText == CSML_ATTRIBUTE_IDENTIFIER)
+                    )
+                    .First() // should always be one
+                )
+            )
+        );
 
         return attributes.ToImmutableArray();
     }

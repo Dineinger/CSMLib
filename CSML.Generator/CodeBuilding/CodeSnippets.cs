@@ -28,7 +28,7 @@ internal static class CodeSnippets
         
         {{GENERATED_CODE_ATTRIBUTE}}
         [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-        public sealed class CSMLCodeAttribute<T> : global::System.Attribute
+        public sealed class CSMLCodeAttribute : global::System.Attribute
         {
             public CSMLCodeAttribute(string csmlCode)
             {

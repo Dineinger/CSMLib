@@ -1,6 +1,6 @@
 namespace CSML.Tests;
 
-[CSMLCode<App>("""
+[CSMLCode("""
     <App>
         <MainPage #MainPage>
 
