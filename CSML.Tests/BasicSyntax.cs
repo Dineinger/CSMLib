@@ -2,7 +2,8 @@ namespace CSML.Tests;
 
 [CSMLCode("""
     <App>
-        <MainPage #MainPage>
+        <MainPage 
+            #MainPage>
 
         </MainPage>
     </App>

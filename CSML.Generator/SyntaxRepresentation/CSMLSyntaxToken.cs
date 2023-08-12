@@ -31,6 +31,8 @@ public struct CSMLSyntaxToken
 
     public static CSMLSyntaxToken At => new(SyntaxType.AtToken);
 
+    public bool IsTrivia => SyntaxType is SyntaxType.EndOfFileTrivia or SyntaxType.EndOfLineTrivia or SyntaxType.WhitespaceTrivia;
+
     internal static CSMLSyntaxToken Identifier(string buffer) =>
         new(SyntaxType.Identifier)
         {
