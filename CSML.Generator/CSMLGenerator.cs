@@ -14,6 +14,8 @@ public class CSMLGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(context.CompilationProvider,
             static (context, compilation) =>
             {
+                DebugReporter.Clear();
+
                 context.AddSource("CSMLBasics.generated.cs", CodeSnippets.BASIC_CODE);
 
                 var compiler = new CSMLCompiler(context);

@@ -12,7 +12,6 @@ internal class SyntaxTokenVerifier
         .AddOption(x => x
             .Add(SyntaxType.GreaterThanToken)
             .AddList(x => x
-                .Add(SyntaxType.WhitespaceTrivia)
                 .Add(SyntaxType.Hashtag)
                 .Add(SyntaxType.Identifier)
                 .Add(SyntaxType.GreaterThanToken)

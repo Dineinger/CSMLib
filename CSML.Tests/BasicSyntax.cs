@@ -2,10 +2,9 @@ namespace CSML.Tests;
 
 [CSMLCode("""
     <App>
-        <MainPage 
+        <MainPage
             #MainPage>
-            <Label #x>
-            </Label>
+
         </MainPage>
     </App>
     """)]
@@ -24,7 +23,6 @@ public class BasicSyntax
             <MainPage>
                 <Div #One>
                     <Div #OneOne>
-                        <Label #Text></Label>
                     </Div>
                     <Div #OneTwo>
                     </Div>

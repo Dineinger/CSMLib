@@ -1,4 +1,5 @@
-﻿using CSML.Generator.SyntaxRepresentation;
+﻿using CSML.Generator;
+using CSML.Generator.SyntaxRepresentation;
 using CSML.Generator.SyntaxRepresentation.SyntaxErrors;
 
 namespace CSML.Compiler;
@@ -40,15 +41,27 @@ internal sealed class SyntaxNodeVerification
 
     private SyntaxError? VerifyListOfOption(SyntaxNodeVerificationTokenItem item, ref ReadOnlySpan<CSMLSyntaxToken> tokensUnchecked, string syntaxNodeType)
     {
+        SyntaxError? error  = null;
         foreach (var option in item.Options!) {
-            var error = Verify(option, ref tokensUnchecked, syntaxNodeType);
+            error = Verify(option, ref tokensUnchecked, syntaxNodeType);
 
             if (error is null) {
                 return null;
             }
         }
 
-        return new UnknownSyntaxSyntaxError($"trying verifying {syntaxNodeType}: Not allowed symbol: {tokensUnchecked[0].SyntaxType}.");
+        var optionsPossible = String.Join(" | ", item.Options!.Select(x =>
+        {
+            return x.Kind switch
+            {
+                VerificationTokenItemKind.Item => "Item: " + x.SyntaxType,
+                VerificationTokenItemKind.ListOfOption => "Option",
+                VerificationTokenItemKind.List => "List",
+                _ => throw new NotImplementedException(),
+            };
+        }));
+
+        return new UnknownSyntaxSyntaxError($"trying verifying {syntaxNodeType}: Not allowed symbol: {tokensUnchecked[0].SyntaxType}. First option is: {optionsPossible}. ### Inner error: {error?.Message ?? "none"}");
     }
 
     private SyntaxError? VerifyList(SyntaxNodeVerificationTokenItem item, ref ReadOnlySpan<CSMLSyntaxToken> tokensUnchecked, string syntaxNodeType)
@@ -77,15 +90,18 @@ internal sealed class SyntaxNodeVerification
 
     private SyntaxError? VerifyItem(SyntaxNodeVerificationTokenItem item, ref ReadOnlySpan<CSMLSyntaxToken> tokensUnchecked, string syntaxNodeType)
     {
-        var firstToken = tokensUnchecked[0];
         var requiredSyntaxType = item.SyntaxType!;
-        if (firstToken.SyntaxType != requiredSyntaxType) {
-            if (_triviaPolicy is TriviaPolicy.IgnoreAll && tokensUnchecked[0].IsTrivia) {
-                tokensUnchecked = tokensUnchecked.Slice(1);
-                return null;
+
+        while (tokensUnchecked[0].SyntaxType != requiredSyntaxType) {
+            if (! (_triviaPolicy is TriviaPolicy.IgnoreAll && tokensUnchecked[0].IsTrivia)) {
+                return new UnknownSyntaxSyntaxError($"trying verifying {syntaxNodeType}: {requiredSyntaxType} symbole missing.");
             }
 
-            return new UnknownSyntaxSyntaxError($"trying verifying {syntaxNodeType}: {requiredSyntaxType} symbole missing.");
+            if (tokensUnchecked.Length <= 0) {
+                return new UnknownSyntaxSyntaxError($"ran out of tokens verifying {_syntaxNodeType}.");
+            }
+
+            tokensUnchecked = tokensUnchecked.Slice(1);
         }
 
         return null;
