@@ -8,6 +8,8 @@ public abstract class CSMLSyntaxNode
 
     public abstract IEnumerable<CSMLSyntaxNode> DescendingNodes();
 
+    public abstract IReadOnlyList<CSMLSyntaxToken> Tokens { get; }
+
     protected IEnumerable<CSMLSyntaxNode> DefaultDescendingNodesImpl(IEnumerable<CSMLSyntaxNode> directChildTokens)
     {
         foreach (var child in directChildTokens)

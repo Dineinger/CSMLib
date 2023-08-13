@@ -9,7 +9,7 @@ public sealed class CSMLComponentOpeningSyntax : CSMLSyntaxNode
 
     public string Type => _type;
     public string BaseType => _baseType;
-    public IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
+    public override IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 

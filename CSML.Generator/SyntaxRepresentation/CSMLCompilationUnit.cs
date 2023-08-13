@@ -8,6 +8,8 @@ public class CSMLCompilationUnit : CSMLSyntaxNode
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 
+    public override IReadOnlyList<CSMLSyntaxToken> Tokens => throw new NotImplementedException();
+
     public CSMLCompilationUnit(List<CSMLSyntaxNode> directChildren)
     {
         _directChildren = directChildren;

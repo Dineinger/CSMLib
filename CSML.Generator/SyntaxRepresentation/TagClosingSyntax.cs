@@ -7,7 +7,7 @@ public sealed class TagClosingSyntax : CSMLSyntaxNode
     private readonly string _type;
 
     public string Type => _type;
-    public IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
+    public override IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 

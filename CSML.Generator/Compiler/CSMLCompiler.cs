@@ -31,6 +31,9 @@ internal class CSMLCompiler
             return null;
         }
 
+        //syntaxError = new SyntaxError(string.Join("|||", syntaxTreesUnverified.Select(x => x.CSMLSyntaxTree).First().GetRoot().DescendingNodes().Select(x => string.Join("|", x.Tokens.Select(x => x.SyntaxType)))));
+        //return null;
+
         _treeVerifier.VerifySyntaxTrees(syntaxTreesUnverified);
 
         var syntaxTreesVerified = syntaxTreesUnverified;

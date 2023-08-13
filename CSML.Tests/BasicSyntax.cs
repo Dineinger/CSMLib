@@ -4,7 +4,8 @@ namespace CSML.Tests;
     <App>
         <MainPage 
             #MainPage>
-
+            <Label #x>
+            </Label>
         </MainPage>
     </App>
     """)]
@@ -26,7 +27,6 @@ public class BasicSyntax
                         <Label #Text></Label>
                     </Div>
                     <Div #OneTwo>
-                        <Label #TextTwo></Label>
                     </Div>
                 </Div>
             </MainPage>

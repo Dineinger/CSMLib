@@ -1,12 +1,12 @@
 ﻿namespace CSML.Generator.SyntaxRepresentation;
 
-public sealed class TagSelfClosingSyntax : CSMLSyntaxNode
+public sealed class TagSelfClosingSyntax : CSMLSyntaxNode, ITagDeclarationSyntax
 {
     private readonly CSMLSyntaxToken[] _tokens;
     private readonly List<CSMLSyntaxNode> _directChildren;
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
-    public IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
+    public override IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
     public string Type { get; }
     public string? Name { get; }
