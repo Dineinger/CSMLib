@@ -27,4 +27,20 @@ internal class SyntaxTokenVerifier
         .Add(SyntaxType.GreaterThanToken)
     ),
     syntaxNodeType: "tag closing syntax");
+
+    public readonly SyntaxNodeVerification TagSelfClosingSyntax = new(
+        SyntaxNodeVerificationTokenItem.FromList(x => x
+            .Add(SyntaxType.LessThanToken)
+            .Add(SyntaxType.Identifier)
+            .AddOption(x => x
+                .AddList(x => x
+                    .Add(SyntaxType.SlashToken)
+                    .Add(SyntaxType.GreaterThanToken))
+                .AddList(x => x
+                    .Add(SyntaxType.Hashtag)
+                    .Add(SyntaxType.Identifier)
+                    .Add(SyntaxType.SlashToken)
+                    .Add(SyntaxType.GreaterThanToken))
+        )),
+        "tag self closing syntax");
 }

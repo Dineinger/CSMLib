@@ -92,6 +92,11 @@ public class CSMLSyntaxTreeVerifier
             return true;
         }
 
+        if (node is TagSelfClosingSyntax) {
+            syntaxError = null;
+            return true;
+        }
+
         if (node is TagClosingSyntax tagClosing) {
             if (openTags.Peek() is TagOpeningSyntax tagOpeningWhenTagClosing) {
                 if (tagClosing.Type != tagOpeningWhenTagClosing.Type) {

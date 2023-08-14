@@ -117,6 +117,14 @@ internal class SyntaxTreeCreator
 
     private bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, ReadOnlySpan<CSMLSyntaxToken> tokens, out SyntaxError? syntaxError)
     {
+        var selfClosingSyntaxError = _tokenVerifier.TagSelfClosingSyntax.Verify(tokens);
+        if (selfClosingSyntaxError is null) {
+            var verifiedTokens = tokens.ToArray();
+            builder.AddAndStay(new SyntaxNodeBuilder(SyntaxNodeKind.TagSelfClosingSyntax, verifiedTokens));
+            syntaxError = null;
+            return true;
+        }
+
         var openingSyntaxError = _tokenVerifier.TagOpeningSyntaxVerification.Verify(tokens);
         if (openingSyntaxError is null) {
             var verifiedTokens = tokens.ToArray();
@@ -141,7 +149,8 @@ internal class SyntaxTreeCreator
         }
 
         syntaxError =
-            openingSyntaxError
+            selfClosingSyntaxError
+            ?? openingSyntaxError
             ?? closingSyntaxError
             ?? new TagSyntaxError($"""
                 Tag does not fit any allowed syntax

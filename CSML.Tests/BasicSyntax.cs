@@ -3,9 +3,7 @@ namespace CSML.Tests;
 [CSMLCode("""
     <App>
         <MainPage
-            #MainPage>
-
-        </MainPage>
+            #MainPage />
     </App>
     """)]
 public partial class App
@@ -23,8 +21,10 @@ public class BasicSyntax
             <MainPage>
                 <Div #One>
                     <Div #OneOne>
+                        <Label #TextOne />
                     </Div>
                     <Div #OneTwo>
+                        <Label #TextTwo />
                     </Div>
                 </Div>
             </MainPage>

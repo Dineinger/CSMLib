@@ -106,7 +106,8 @@ internal static class CSMLClassCreator
                     }
 
                     if (n is TagSelfClosingSyntax selfClosingTag) {
-
+                        AppendSetupCodeFromNode(sb, selfClosingTag, "self", ref varCount);
+                        continue;
                     }
 
                     if (n is TagClosingSyntax) {
@@ -161,6 +162,12 @@ internal static class CSMLClassCreator
 
             if (child is TagClosingSyntax) {
                 break;
+            }
+
+            if (child is TagSelfClosingSyntax selfClosingTag) {
+                varCount++;
+                AppendSetupCodeFromNode(sb, selfClosingTag, typeVar, ref varCount);
+                continue;
             }
 
             throw new NotImplementedException($"node couldn't be turned into C# code: {child}");

@@ -29,6 +29,11 @@ internal class SyntaxTreeBuilder
         _last = _last.Parent;
     }
 
+    public void AddAndStay(SyntaxNodeBuilder node)
+    {
+        _last.Children.Add(node);
+    }
+
     public bool Contains(SyntaxNodeKind nodeKind)
     {
         return Contains(nodeKind, _root);
@@ -58,6 +63,7 @@ internal class SyntaxTreeBuilder
             SyntaxNodeKind.TagClosingSyntax => new TagClosingSyntax(tokens, children, GetTagClosingSyntaxType(tokens)),
             SyntaxNodeKind.CSMLComponentOpeningSyntax => new CSMLComponentOpeningSyntax(tokens, children, GetComponentType(tokens), "object"),
             SyntaxNodeKind.CompilationUnit => new CSMLCompilationUnit(children),
+            SyntaxNodeKind.TagSelfClosingSyntax => new TagSelfClosingSyntax(tokens, children, GetComponentType(tokens), GetTagOpeningSyntaxName(tokens)),
             _ => throw new NotImplementedException("syntax builder couldn't find the correct syntax node for the enum SyntaxNodeKind")
         };
 
@@ -105,7 +111,8 @@ internal enum SyntaxNodeKind
     TagOpeningSyntax,
     TagClosingSyntax,
     CSMLComponentOpeningSyntax,
-    CompilationUnit
+    CompilationUnit,
+    TagSelfClosingSyntax
 }
 
 internal class SyntaxNodeBuilder
