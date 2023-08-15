@@ -10,7 +10,6 @@ internal sealed class SyntaxNodeVerifier
 {
     private readonly Regex _pattern;
     private readonly string _syntaxNodeType;
-    private readonly TriviaPolicy _triviaPolicy;
 
     public SyntaxNodeVerifier(Regex pattern, string syntaxNodeType)
     {
