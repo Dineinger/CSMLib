@@ -9,7 +9,7 @@ internal class SyntaxNodeVerifiers
 {
     private static readonly Regex _tagOpeningSyntaxRegex = new(@"<\s*[A-z]+(\s+#[A-z]+)?\s*>");
     private static readonly Regex _tagClosingSyntaxRegex = new(@"<\s*\/\s*[A-z]+\s*>");
-    private static readonly Regex _tagSelfClosingSyntaxRegex = new(@"<\s*[A-z]+(\s+#[A-z]+)?\s+\/\s*>");
+    private static readonly Regex _tagSelfClosingSyntaxRegex = new("""<\s*[A-z]+(\s+#[A-z]+)?(\s+[A-z]+="[A-z]*")*\s+\/\s*>""");
 
     public readonly SyntaxNodeVerifier TagOpeningSyntaxVerification = new (_tagOpeningSyntaxRegex, syntaxNodeType: "tag opening syntax");
 

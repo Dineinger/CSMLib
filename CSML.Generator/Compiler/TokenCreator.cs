@@ -11,11 +11,11 @@ public class TokenCreator
         string buffer = "";
         for (int a = 0; a < text.Length; a++) {
             var addedToBuffer = GetToken(text[a], ref buffer, out var tokenToAdd);
-            if (addedToBuffer) {
+            if (addedToBuffer is BufferStatus.AddedToBufferAndKeepBuffer) {
                 continue;
             }
 
-            if (addedToBuffer is false && !String.IsNullOrWhiteSpace(buffer)) {
+            if (addedToBuffer is BufferStatus.AddAndClearBuffer && !String.IsNullOrWhiteSpace(buffer)) {
                 tokens.Add(CSMLSyntaxToken.Identifier(buffer));
                 buffer = "";
             }
@@ -43,21 +43,46 @@ public class TokenCreator
         return result.ToArray();
     }
 
-    public bool GetToken(char c, ref string buffer, out CSMLSyntaxToken tokenToAdd)
+    private BufferStatus GetToken(char c, ref string buffer, out CSMLSyntaxToken tokenToAdd)
     {
         switch (c) {
             case (>= 'A' and <= 'Z') or (>= 'a' and <= 'z'):
                 buffer += c; // TODO: remove allocations
                 tokenToAdd = default;
-                return true;
-            case '<': tokenToAdd = CSMLSyntaxToken.LessThan; return false;
-            case '>': tokenToAdd = CSMLSyntaxToken.GreaterThan; return false;
-            case '/': tokenToAdd = CSMLSyntaxToken.SlashToken; return false;
-            case '\n' or '\r': tokenToAdd = CSMLSyntaxToken.EndOfLineTrivia; return false; // TODO: "\r\n" implementieren
-            case ' ': tokenToAdd = CSMLSyntaxToken.WhitespaceTrivia; return false;
-            case '#': tokenToAdd = CSMLSyntaxToken.Hashtag; return false;
-            case '@': tokenToAdd = CSMLSyntaxToken.At; return false;
+                return BufferStatus.AddedToBufferAndKeepBuffer;
+            case '"':
+                if (String.IsNullOrEmpty(buffer)) {
+                    buffer = "\"";
+                    tokenToAdd = default;
+                    return BufferStatus.AddedToBufferAndKeepBuffer;
+                }
+
+                buffer += "\"";
+                tokenToAdd = default;
+                return BufferStatus.AddAndClearBuffer;
+            case '<': tokenToAdd = CSMLSyntaxToken.LessThan;
+                return BufferStatus.AddAndClearBuffer;
+            case '>': tokenToAdd = CSMLSyntaxToken.GreaterThan;
+                return BufferStatus.AddAndClearBuffer;
+            case '/': tokenToAdd = CSMLSyntaxToken.SlashToken;
+                return BufferStatus.AddAndClearBuffer;
+            case '\n' or '\r': tokenToAdd = CSMLSyntaxToken.EndOfLineTrivia;
+                return BufferStatus.AddAndClearBuffer; // TODO: "\r\n" implementieren
+            case ' ': tokenToAdd = CSMLSyntaxToken.WhitespaceTrivia;
+                return BufferStatus.AddAndClearBuffer;
+            case '#': tokenToAdd = CSMLSyntaxToken.Hashtag;
+                return BufferStatus.AddAndClearBuffer;
+            case '@': tokenToAdd = CSMLSyntaxToken.At;
+                return BufferStatus.AddAndClearBuffer;
+            case '=': tokenToAdd = CSMLSyntaxToken.EqualSign;
+                return BufferStatus.AddAndClearBuffer;
             default: throw new NotImplementedException($"""Symbol not implemented when creating tokens: "{c}" """);
         }
     }
+}
+
+internal enum BufferStatus
+{
+    AddedToBufferAndKeepBuffer,
+    AddAndClearBuffer
 }

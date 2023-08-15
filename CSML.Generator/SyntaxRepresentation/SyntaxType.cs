@@ -12,6 +12,7 @@ public enum SyntaxType
     WhitespaceTrivia,
     EndOfFileTrivia,
     Hashtag,
-    AtToken
+    AtToken,
+    EqualSignToken
 }
 

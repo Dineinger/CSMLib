@@ -34,6 +34,8 @@ public struct CSMLSyntaxToken
 
     public readonly bool IsTrivia => SyntaxType is SyntaxType.EndOfFileTrivia or SyntaxType.EndOfLineTrivia or SyntaxType.WhitespaceTrivia;
 
+    public static CSMLSyntaxToken EqualSign => new(SyntaxType.EqualSignToken, "=");
+
     internal static CSMLSyntaxToken Identifier(string buffer) =>
         new(SyntaxType.Identifier, buffer);
 }

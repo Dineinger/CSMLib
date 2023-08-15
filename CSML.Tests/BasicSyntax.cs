@@ -3,7 +3,8 @@ namespace CSML.Tests;
 [CSMLCode("""
     <App>
         <MainPage
-            #MainPage />
+            #MainPage
+            Test="true" />
     </App>
     """)]
 public partial class App

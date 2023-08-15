@@ -1,26 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace CSML.Generator.SyntaxRepresentation;
-
-public sealed class TagOpeningSyntax : CSMLSyntaxNode, ITagDeclarationSyntax
+internal class CSMLAttributeSyntax : CSMLSyntaxNode
 {
     private readonly CSMLSyntaxToken[] _tokens;
     private readonly List<CSMLSyntaxNode> _directChildren;
 
     public override IEnumerable<CSMLSyntaxNode> DirectChildren => _directChildren;
 
-    public string Type { get; }
-    public string? Name { get; }
     public override IReadOnlyList<CSMLSyntaxToken> Tokens => _tokens;
 
-    public TagOpeningSyntax(CSMLSyntaxToken[] tokens, List<CSMLSyntaxNode> directChildren, string type, string? name)
+    public CSMLAttributeSyntax(CSMLSyntaxToken[] tokens, List<CSMLSyntaxNode> directChildren)
     {
-        Type = type;
-        Name = name;
         _tokens = tokens;
         _directChildren = directChildren;
     }
 
-    public override IEnumerable<CSMLSyntaxNode> DescendingNodes() => DefaultDescendingNodesImpl(_directChildren);
+    public override IEnumerable<CSMLSyntaxNode> DescendingNodes()
+    {
+        return DefaultDescendingNodesImpl(_directChildren);
+    }
 }
