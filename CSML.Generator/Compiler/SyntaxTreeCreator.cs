@@ -10,9 +10,9 @@ internal class SyntaxTreeCreator
 {
     private readonly SourceProductionContext _context;
     private readonly TokenCreator _tokenCreator;
-    private readonly SyntaxTokenVerifiers _tokenVerifier;
+    private readonly SyntaxNodeVerifiers _tokenVerifier;
 
-    public SyntaxTreeCreator(SourceProductionContext context, TokenCreator tokenCreator, SyntaxTokenVerifiers tokenVerifier)
+    public SyntaxTreeCreator(SourceProductionContext context, TokenCreator tokenCreator, SyntaxNodeVerifiers tokenVerifier)
     {
         _context = context;
         _tokenCreator = tokenCreator;
@@ -115,19 +115,11 @@ internal class SyntaxTreeCreator
         return true;
     }
 
-    private bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, ReadOnlySpan<CSMLSyntaxToken> tokens, out SyntaxError? syntaxError)
+    private bool BuildSyntaxNodesFromTagTokens(SyntaxTreeBuilder builder, CSMLSyntaxTokensInfo tokenInfo, out SyntaxError? syntaxError)
     {
-        var selfClosingSyntaxError = _tokenVerifier.TagSelfClosingSyntax.Verify(tokens);
-        if (selfClosingSyntaxError is null) {
-            var verifiedTokens = tokens.ToArray();
-            builder.AddAndStay(new SyntaxNodeBuilder(SyntaxNodeKind.TagSelfClosingSyntax, verifiedTokens));
-            syntaxError = null;
-            return true;
-        }
-
-        var openingSyntaxError = _tokenVerifier.TagOpeningSyntaxVerification.Verify(tokens);
+        var openingSyntaxError = _tokenVerifier.TagOpeningSyntaxVerification.Verify(tokenInfo.Text);
         if (openingSyntaxError is null) {
-            var verifiedTokens = tokens.ToArray();
+            var verifiedTokens = tokenInfo.Tokens;
 
             if (builder.Contains(SyntaxNodeKind.CSMLComponentOpeningSyntax)) {
                 builder.InAndAdd(new SyntaxNodeBuilder(SyntaxNodeKind.TagOpeningSyntax, verifiedTokens));
@@ -140,21 +132,42 @@ internal class SyntaxTreeCreator
             return true;
         }
 
-        var closingSyntaxError = _tokenVerifier.TagClosingSyntax.Verify(tokens);
+        var selfClosingSyntaxError = _tokenVerifier.TagSelfClosingSyntax.Verify(tokenInfo.Text);
+        if (selfClosingSyntaxError is null) {
+            var verifiedTokens = tokenInfo.Tokens;
+            builder.AddAndStay(new SyntaxNodeBuilder(SyntaxNodeKind.TagSelfClosingSyntax, verifiedTokens));
+            syntaxError = null;
+            return true;
+        }
+
+        var closingSyntaxError = _tokenVerifier.TagClosingSyntax.Verify(tokenInfo.Text);
         if (closingSyntaxError is null) {
-            var verifiedTokens = tokens.ToArray();
-            builder.AddAndOut(new SyntaxNodeBuilder(SyntaxNodeKind.TagClosingSyntax, verifiedTokens));
+            var verifiedTokens = tokenInfo;
+            builder.AddAndOut(new SyntaxNodeBuilder(SyntaxNodeKind.TagClosingSyntax, verifiedTokens.Tokens));
             syntaxError = null;
             return true;
         }
 
         syntaxError =
-            selfClosingSyntaxError
-            ?? openingSyntaxError
+            openingSyntaxError
+            ?? selfClosingSyntaxError
             ?? closingSyntaxError
             ?? new TagSyntaxError($"""
                 Tag does not fit any allowed syntax
                 """);
         return false;
     }
+}
+
+internal readonly struct CSMLSyntaxTokensInfo
+{
+    public CSMLSyntaxTokensInfo(CSMLSyntaxToken[] tokens, string text)
+    {
+        Tokens = tokens;
+        Text = text;
+    }
+
+    public CSMLSyntaxToken[] Tokens { get; }
+
+    public string Text { get; }
 }

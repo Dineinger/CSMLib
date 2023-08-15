@@ -11,14 +11,14 @@ internal class CSMLCompiler
     private readonly SourceProductionContext _context;
     private readonly SyntaxTreeCreator _syntaxTreeCreator;
     private readonly CSMLSyntaxTreeVerifier _treeVerifier;
-    private readonly SyntaxTokenVerifiers _tokenVerifier;
+    private readonly SyntaxNodeVerifiers _tokenVerifier;
     private readonly TokenCreator _tokenCreator;
 
     public CSMLCompiler(SourceProductionContext context)
     {
         _context = context;
         _treeVerifier = new CSMLSyntaxTreeVerifier(context);
-        _tokenVerifier = new SyntaxTokenVerifiers();
+        _tokenVerifier = new SyntaxNodeVerifiers();
         _tokenCreator = new TokenCreator();
         _syntaxTreeCreator = new SyntaxTreeCreator(_context, _tokenCreator, _tokenVerifier);
     }

@@ -2,7 +2,7 @@
 
 namespace CSML.Compiler;
 
-public class TokenQueue
+internal class TokenQueue
 {
     private readonly ReadOnlyMemory<CSMLSyntaxToken> _tokens;
     private int Count => _tokens.Length;
@@ -30,7 +30,7 @@ public class TokenQueue
         return true;
     }
 
-    public ReadOnlySpan<CSMLSyntaxToken> GetUntilOrEndAndMove(SyntaxType syntaxType)
+    public CSMLSyntaxTokensInfo GetUntilOrEndAndMove(SyntaxType syntaxType)
     {
         int indexOfSyntaxToken = -1;
         var tokens = _tokens.Span;
@@ -46,11 +46,13 @@ public class TokenQueue
         var index = Index;
         if (indexOfSyntaxToken == -1) {
             Index = Count;
-            return tokens.Slice(index);
+            var fromBeginning = tokens.Slice(index).ToArray();
+            return new CSMLSyntaxTokensInfo(fromBeginning, String.Concat(fromBeginning.Select(x => x.Value)));
         }
 
         Index = indexOfSyntaxToken + 1;
-        return tokens.Slice(index, indexOfSyntaxToken - index + 1);
+        var inBetween = tokens.Slice(index, indexOfSyntaxToken - index + 1).ToArray();
+        return new(inBetween, String.Concat(inBetween.Select(x => x.Value)));
     }
 
     internal bool IsNextAnyOfKinds(params SyntaxType[] syntaxTypes)
