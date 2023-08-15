@@ -10,9 +10,9 @@ internal class SyntaxTreeCreator
 {
     private readonly SourceProductionContext _context;
     private readonly TokenCreator _tokenCreator;
-    private readonly SyntaxTokenVerifier _tokenVerifier;
+    private readonly SyntaxTokenVerifiers _tokenVerifier;
 
-    public SyntaxTreeCreator(SourceProductionContext context, TokenCreator tokenCreator, SyntaxTokenVerifier tokenVerifier)
+    public SyntaxTreeCreator(SourceProductionContext context, TokenCreator tokenCreator, SyntaxTokenVerifiers tokenVerifier)
     {
         _context = context;
         _tokenCreator = tokenCreator;

@@ -1,18 +1,26 @@
 ﻿using CSML.Generator;
 using CSML.Generator.SyntaxRepresentation;
 using CSML.Generator.SyntaxRepresentation.SyntaxErrors;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CSML.Compiler;
 
-internal sealed class SyntaxNodeVerification
+internal sealed class SyntaxNodeVerifier
 {
     private readonly SyntaxNodeVerificationTokenItem _item;
     private readonly string _syntaxNodeType;
     private readonly TriviaPolicy _triviaPolicy;
 
-    public SyntaxNodeVerification(SyntaxNodeVerificationTokenItem item, string syntaxNodeType, TriviaPolicy triviaPolicy = TriviaPolicy.IgnoreAll)
+    public SyntaxNodeVerifier(SyntaxNodeVerificationTokenItem item, string syntaxNodeType, TriviaPolicy triviaPolicy = TriviaPolicy.IgnoreAll)
     {
         _item = item;
+        _syntaxNodeType = syntaxNodeType;
+        _triviaPolicy = triviaPolicy;
+    }
+
+    public SyntaxNodeVerifier(Action<SyntaxNodeVerificationTokenList> action, string syntaxNodeType, TriviaPolicy triviaPolicy = TriviaPolicy.IgnoreAll)
+    {
+        _item = SyntaxNodeVerificationTokenItem.FromList(action);
         _syntaxNodeType = syntaxNodeType;
         _triviaPolicy = triviaPolicy;
     }
